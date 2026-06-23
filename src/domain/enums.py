@@ -1,0 +1,94 @@
+from enum import Enum
+
+
+class EntityType(str, Enum):
+    PERSON = "PERSON"
+    PROJECT = "PROJECT"
+    GOAL = "GOAL"
+    TASK = "TASK"
+    SKILL = "SKILL"
+    DOCUMENT = "DOCUMENT"
+    ORGANIZATION = "ORGANIZATION"
+    EVENT = "EVENT"
+    CONCEPT = "CONCEPT"
+    ARTIFACT = "ARTIFACT"
+    LOCATION = "LOCATION"
+    PRODUCT = "PRODUCT"
+
+
+class VerificationState(str, Enum):
+    UNVERIFIED = "UNVERIFIED"
+    INFERRED = "INFERRED"
+    VERIFIED = "VERIFIED"
+    DISPUTED = "DISPUTED"
+
+
+class Direction(str, Enum):
+    DIRECTED = "DIRECTED"
+    BIDIRECTIONAL = "BIDIRECTIONAL"
+
+
+class SubjectType(str, Enum):
+    ENTITY = "ENTITY"
+    RELATIONSHIP = "RELATIONSHIP"
+
+
+class EvidenceSourceType(str, Enum):
+    MEMORY = "MEMORY"
+    DOCUMENT = "DOCUMENT"
+    INFERENCE = "INFERENCE"
+    USER_INPUT = "USER_INPUT"
+    SYSTEM = "SYSTEM"
+
+
+class RelationshipType(str, Enum):
+    # IDENTITY
+    IS_SAME_AS = "IS_SAME_AS"
+    IS_ALIAS_OF = "IS_ALIAS_OF"
+    IS_VARIATION_OF = "IS_VARIATION_OF"
+    # OWNERSHIP
+    OWNS = "OWNS"
+    CREATED_BY = "CREATED_BY"
+    MAINTAINED_BY = "MAINTAINED_BY"
+    AUTHORED_BY = "AUTHORED_BY"
+    # DEPENDENCY
+    DEPENDS_ON = "DEPENDS_ON"
+    REQUIRES = "REQUIRES"
+    USES = "USES"
+    INTEGRATES_WITH = "INTEGRATES_WITH"
+    # HIERARCHY
+    PART_OF = "PART_OF"
+    CONTAINS = "CONTAINS"
+    CHILD_OF = "CHILD_OF"
+    PARENT_OF = "PARENT_OF"
+    # TEMPORAL
+    PRECEDED_BY = "PRECEDED_BY"
+    FOLLOWED_BY = "FOLLOWED_BY"
+    CO_OCCURRED_WITH = "CO_OCCURRED_WITH"
+    SCHEDULED_ON = "SCHEDULED_ON"
+    # GOAL
+    WORKS_TOWARD = "WORKS_TOWARD"
+    CONTRIBUTES_TO = "CONTRIBUTES_TO"
+    BLOCKS = "BLOCKS"
+    ENABLES = "ENABLES"
+    # PROJECT
+    ASSIGNED_TO = "ASSIGNED_TO"
+    MEMBER_OF = "MEMBER_OF"
+    REPORTS_TO = "REPORTS_TO"
+    COLLABORATES_ON = "COLLABORATES_ON"
+    # SEMANTIC
+    RELATED_TO = "RELATED_TO"
+    SIMILAR_TO = "SIMILAR_TO"
+    CONTRADICTS = "CONTRADICTS"
+    REFERENCES = "REFERENCES"
+    DERIVED_FROM = "DERIVED_FROM"
+
+
+# Source type weights for evidence scoring (from trust model)
+EVIDENCE_SOURCE_WEIGHTS: dict[EvidenceSourceType, float] = {
+    EvidenceSourceType.USER_INPUT: 1.0,
+    EvidenceSourceType.DOCUMENT: 0.9,
+    EvidenceSourceType.MEMORY: 0.8,
+    EvidenceSourceType.SYSTEM: 0.7,
+    EvidenceSourceType.INFERENCE: 0.6,
+}

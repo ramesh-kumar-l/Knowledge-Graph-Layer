@@ -1,47 +1,61 @@
 # 90 — Session Handoff
 
 **Session date:** 2026-06-23
-**Phases completed:** Phase 0 (Bootstrap) + Phase 1 (Domain Model)
+**Phases completed:** Phase 0, Phase 1, Phase 2
 
-## Phase 0 Summary
-Bootstrapped the project-memory-bank from a greenfield repo. Created 22 files with
-tiered content. Recorded DEC-0001 (language deferred) and DEC-0002 (storage-agnostic).
+---
 
-## Phase 1 Summary
-Completed the full domain model — documentation only, language-agnostic.
+## Phase 2 Summary — Storage Foundation
 
-### Files updated (Phase 1)
-- `10-domain-model.md` — Entity, Relationship, Evidence, Provenance, TrustScore, Version
-- `11-memory-model.md` — SCP Memory Core ingestion pipeline and mapping rules
-- `12-knowledge-graph-model.md` — 12 entity types + 36 relationship types (8 categories)
-- `13-query-model.md` — 6 query types, result envelope, global parameters, ranking
-- `14-trust-model.md` — Confidence formula, verification states, conflict detection, freshness
-- `22-graph-schema.md` — Logical schema for all record types, indexes, integrity rules
-- `03-current-state.md`, `05-technical-decisions.md`, `30-active-phase.md`,
-  `31-active-tasks.md`, `33-next-actions.md` — updated to reflect Phase 1 complete
+### Technical decisions ratified
+- **ADR-0005:** Python 3.11+ / FastAPI / Pydantic v2 / SQLAlchemy 2.0 async / Uvicorn
+- **ADR-0006:** PostgreSQL 16 + pgvector; recursive CTEs for graph traversal ≤ 5 hops
 
-### Files created (Phase 1)
-- `docs/adr/ADR-0001-entity-taxonomy.md` — 12 type taxonomy rationale
-- `docs/adr/ADR-0002-relationship-typing.md` — 36 types, 8 categories, directed default
-- `docs/adr/ADR-0003-evidence-provenance.md` — immutable evidence, single provenance
-- `docs/adr/ADR-0004-versioning-strategy.md` — append-only version log
+### What was built
 
-### Technical decisions made (Phase 1)
-- **DEC-0003:** Entity taxonomy — 12 canonical types with JSON attributes.
-- **DEC-0004:** Relationship typing — 36 types, 8 categories, directed by default.
-- **DEC-0005:** Evidence immutable; Provenance one-per-subject.
-- **DEC-0006:** Versioning append-only; current state in live record.
+**Domain layer (`src/domain/`):**
+- 7 Pydantic models: Entity, Relationship, Evidence, Provenance, TrustScore, Version + all enums
+- Pydantic v2 frozen models for immutable objects (Evidence, Provenance, Version, TrustScore)
+- Domain invariants enforced (no self-loops, confidence bounds, name min-length, content 4096 char cap)
 
-## Risks
-- Language and storage backend are still deferred (intentional per DEC-0001, DEC-0002).
-  Phase 2 must resolve both before any code is written.
-- JSON Patch diff computation in the Version log requires a mature library; choose carefully in Phase 2.
+**Repository ports (`src/repositories/`):**
+- 6 abstract async interfaces; zero storage coupling
+- Signed contracts for each operation (deduplication, cascade, batch, upsert)
+
+**PostgreSQL adapters (`src/adapters/postgres/`):**
+- ORM models using `sa.Uuid()` (SQLite-portable; JSONB in migration, JSON in ORM)
+- 6 concrete adapters: full CRUD, soft-delete, cascade, search, upsert
+
+**Services (`src/services/`):**
+- `TrustScoreService`: computes formula from 14-trust-model.md; persists via TrustScoreRepository
+- `VersionService`: `create_version_before_write()` → computes JSON Patch diff from previous version
+
+**FastAPI app (`src/api/`):**
+- 3 routers: `/v1/entities`, `/v1/relationships`, `/v1/evidence`
+- Version-before-write enforced in entity create/update endpoints
+- Trust score recomputed after every Evidence create
+- Application-layer referential integrity (entity existence checks on relationship create)
+
+**Migrations (`migrations/`):**
+- Alembic env reads `SYNC_DATABASE_URL` from `.env`
+- `001_initial_schema.py`: all 6 tables, PostgreSQL JSONB columns, all indexes from 22-graph-schema.md
+
+**Tests:**
+- 3 unit test files (20+ cases) — no DB; pure domain logic + service mocks
+- 3 integration test files (21+ cases) — SQLite in-memory via aiosqlite
+- Target: ≥ 80% coverage enforced in `pyproject.toml`
+
+---
+
+## Known limitations / next-session notes
+
+- SQLite integration tests don't cover JSONB operators; run against PostgreSQL for full coverage
+- `search_by_name` uses `ilike` — PostgreSQL full-text search upgrade recommended in Phase 5
+- `soft_delete_by_entity` in entity adapter does NOT cascade yet (relationship cascade lives in relationship adapter) — callers must call both
+- Phase 3 ingestion pipeline (entity extraction, deduplication) not started
 
 ## Recommended next phase
-Phase 2 — Storage Foundation (first implementation phase).
-Key Phase 2 decisions: implementation language (ADR), storage backend (ADR),
-physical schema (DDL/Cypher), repository interfaces (ports), adapters, CRUD APIs,
-versioning enforcement, migration tooling, tests.
+Phase 3 — Entity Engine. See `33-next-actions.md` for full plan.
 
 ## STOP
-Phase 1 complete. Awaiting explicit user approval before Phase 2.
+Phase 2 complete. Awaiting explicit user approval before Phase 3.
