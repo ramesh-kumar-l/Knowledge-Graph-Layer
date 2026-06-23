@@ -1,15 +1,21 @@
-"""Ingestion API — accepts SCP Memory Core records, runs Entity Engine pipeline."""
+"""Ingestion API — accepts SCP Memory Core records, runs Entity + Relationship pipelines."""
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
 from src.api.deps import (
-    entity_repo, evidence_repo, provenance_repo,
+    entity_repo, relationship_repo, evidence_repo, provenance_repo,
     trust_score_service, version_service,
 )
-from src.repositories import EntityRepository, EvidenceRepository, ProvenanceRepository
+from src.repositories import (
+    EntityRepository, RelationshipRepository,
+    EvidenceRepository, ProvenanceRepository,
+)
 from src.services import TrustScoreService, VersionService
 from src.ingestion.entity_pipeline import EntityIngestionPipeline
+from src.ingestion.relationship_extractor import RelationshipExtractor
+from src.ingestion.relationship_pipeline import RelationshipIngestionPipeline
+from src.ingestion.relationship_validator import RelationshipValidator
 from src.ingestion.models import MemoryRecord, IngestionResult
 
 router = APIRouter(prefix="/ingest", tags=["ingestion"])
@@ -17,17 +23,27 @@ router = APIRouter(prefix="/ingest", tags=["ingestion"])
 
 def _pipeline(
     e_repo: Annotated[EntityRepository, Depends(entity_repo)],
+    r_repo: Annotated[RelationshipRepository, Depends(relationship_repo)],
     ev_repo: Annotated[EvidenceRepository, Depends(evidence_repo)],
     prov_repo: Annotated[ProvenanceRepository, Depends(provenance_repo)],
     ts_svc: Annotated[TrustScoreService, Depends(trust_score_service)],
     ver_svc: Annotated[VersionService, Depends(version_service)],
 ) -> EntityIngestionPipeline:
+    rel_pipeline = RelationshipIngestionPipeline(
+        rel_repo=r_repo,
+        evidence_repo=ev_repo,
+        provenance_repo=prov_repo,
+        trust_svc=ts_svc,
+        validator=RelationshipValidator(),
+    )
     return EntityIngestionPipeline(
         entity_repo=e_repo,
         evidence_repo=ev_repo,
         provenance_repo=prov_repo,
         trust_svc=ts_svc,
         version_svc=ver_svc,
+        rel_extractor=RelationshipExtractor(),
+        rel_pipeline=rel_pipeline,
     )
 
 

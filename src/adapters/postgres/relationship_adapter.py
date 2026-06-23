@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import select, or_, update as sa_update
+from sqlalchemy import select, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain import (
@@ -145,3 +145,19 @@ class PostgresRelationshipAdapter(RelationshipRepository):
         row.updated_at = datetime.now(timezone.utc)
         await self._session.flush()
         return _orm_to_domain(row)
+
+    async def exists_by_entities(
+        self,
+        from_entity_id: UUID,
+        to_entity_id: UUID,
+        rel_type: RelationshipType,
+    ) -> bool:
+        result = await self._session.execute(
+            select(func.count()).where(
+                RelationshipORM.from_entity_id == from_entity_id,
+                RelationshipORM.to_entity_id == to_entity_id,
+                RelationshipORM.type == rel_type.value,
+                RelationshipORM.is_active.is_(True),
+            )
+        )
+        return result.scalar_one() > 0

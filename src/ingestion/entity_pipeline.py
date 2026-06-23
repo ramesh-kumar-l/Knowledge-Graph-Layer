@@ -23,11 +23,13 @@ from src.adapters.postgres.evidence_adapter import DuplicateEvidenceError
 from src.adapters.postgres.provenance_adapter import DuplicateProvenanceError
 from src.ingestion.models import (
     MemoryRecord, IngestionResult, ResolutionStrategy,
-    KnowledgeUpdatedEvent,
+    KnowledgeUpdatedEvent, ResolvedEntityRef,
 )
 from src.ingestion.entity_extractor import EntityExtractor
 from src.ingestion.deduplicator import DeduplicationEngine
 from src.ingestion.conflict_detector import ConflictDetector
+from src.ingestion.relationship_extractor import RelationshipExtractor
+from src.ingestion.relationship_pipeline import RelationshipIngestionPipeline
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +47,8 @@ class EntityIngestionPipeline:
         extractor: EntityExtractor | None = None,
         deduplicator: DeduplicationEngine | None = None,
         conflict_detector: ConflictDetector | None = None,
+        rel_extractor: RelationshipExtractor | None = None,
+        rel_pipeline: RelationshipIngestionPipeline | None = None,
     ) -> None:
         self._entity = entity_repo
         self._evidence = evidence_repo
@@ -56,6 +60,8 @@ class EntityIngestionPipeline:
         self._conflict = conflict_detector or ConflictDetector(
             evidence_repo, entity_repo, version_svc
         )
+        self._rel_extractor = rel_extractor
+        self._rel_pipeline = rel_pipeline
 
     async def ingest(self, record: MemoryRecord) -> IngestionResult:
         """Run full pipeline for one MemoryRecord. Idempotent — safe to re-submit."""
@@ -76,6 +82,7 @@ class EntityIngestionPipeline:
         events: list[dict] = []
         entities_created = 0
         entities_matched = 0
+        resolved_refs: list[ResolvedEntityRef] = []
 
         for candidate in candidates:
             # Step 4: RESOLVE — identity resolution
@@ -101,6 +108,13 @@ class EntityIngestionPipeline:
                     continue
                 entities_matched += 1
                 is_new = False
+
+            resolved_refs.append(ResolvedEntityRef(
+                entity_id=entity.id,
+                entity_type=entity.type,
+                name=entity.name,
+                aliases=entity.aliases,
+            ))
 
             evidence_confidence = (
                 resolution.confidence if resolution.confidence > 0.0
@@ -160,14 +174,28 @@ class EntityIngestionPipeline:
                 memory_record_id=record.id,
             ).model_dump(mode="json"))
 
+        # Step 5: EXTRACT + persist relationships (Phase 4)
+        rel_created = 0
+        rel_skipped = 0
+        if self._rel_extractor and self._rel_pipeline and len(resolved_refs) >= 2:
+            rel_candidates = self._rel_extractor.extract(record, resolved_refs)
+            rel_created, rel_skipped, rel_events = await self._rel_pipeline.ingest(
+                rel_candidates, record
+            )
+            events.extend(rel_events)
+
         log.info(
-            "pipeline.complete record=%s created=%d matched=%d events=%d",
-            record.id, entities_created, entities_matched, len(events),
+            "pipeline.complete record=%s created=%d matched=%d "
+            "rel_created=%d rel_skipped=%d events=%d",
+            record.id, entities_created, entities_matched,
+            rel_created, rel_skipped, len(events),
         )
         return IngestionResult(
             memory_record_id=record.id,
             status="PROCESSED",
             entities_created=entities_created,
             entities_matched=entities_matched,
+            relationships_created=rel_created,
+            relationships_skipped=rel_skipped,
             events=events,
         )

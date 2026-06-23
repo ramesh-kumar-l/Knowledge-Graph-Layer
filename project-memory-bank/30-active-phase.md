@@ -1,43 +1,40 @@
 # 30 — Active Phase
 
-**Current phase:** Phase 3 — Entity Engine → **complete**.
+**Current phase:** Phase 4 — Relationship Engine → **complete**.
 
-**Status:** Full entity ingestion pipeline implemented and tested. Awaiting **explicit approval** to begin Phase 4.
+**Status:** Full relationship ingestion pipeline implemented and tested. Awaiting **explicit approval** to begin Phase 5.
 
 ## Completed this phase
 
 ### Source code delivered
-- `src/ingestion/models.py` — MemoryRecord, CandidateEntity, ResolutionResult, IngestionResult, domain events
-- `src/ingestion/normalizer.py` — Name canonicalization (NFC, title-case, alias derivation, attribute key normalization)
-- `src/ingestion/entity_extractor.py` — Rule-based extractor (metadata-driven + content patterns + heuristics)
-- `src/ingestion/deduplicator.py` — Identity resolution (exact-name 0.90, alias 0.85, fuzzy 0.60–0.80, new 0.00)
-- `src/ingestion/conflict_detector.py` — Attribute conflict detection, DISPUTED entity flagging, version bump
-- `src/ingestion/entity_pipeline.py` — Full 9-step ingestion pipeline (RECEIVE → EMIT)
-- `src/api/routers/ingestion.py` — `POST /v1/ingest/memory-record` endpoint
-- `tests/unit/test_normalizer.py` — 21 normalizer unit tests
-- `tests/unit/test_deduplicator.py` — 8 deduplication unit tests (mocked repo)
-- `tests/unit/test_conflict_detector.py` — 7 conflict detection unit tests (mocked repos)
-- `tests/integration/test_entity_pipeline.py` — 14 pipeline integration tests (SQLite in-memory)
+- `src/ingestion/relationship_extractor.py` — 33 verb-pattern rules; metadata-driven (0.95) + content heuristics (0.65–0.85); 30-record benchmark: 100% precision (≥85% exit criterion ✓)
+- `src/ingestion/relationship_validator.py` — Entity-type constraint table (8 constrained types + IS_SAME_AS same-type rule); unconstrained types pass through
+- `src/ingestion/relationship_pipeline.py` — Idempotent dedup by (from_id, to_id, rel_type); constraint validation; Evidence + Provenance + TrustScore per relationship
+- `src/ingestion/models.py` — Added `ResolvedEntityRef`, `CandidateRelationship`, `RelationshipConstraintViolated`, `RelationshipCreatedEvent`; extended `IngestionResult` with `relationships_created`, `relationships_skipped`
+- `src/ingestion/entity_pipeline.py` — Collects `ResolvedEntityRef` during entity loop; invokes relationship pipeline after entity resolution (optional, wired via constructor)
+- `tests/unit/test_relationship_extractor.py` — 15 unit tests + 30-record precision benchmark
+- `tests/unit/test_relationship_validator.py` — 24 unit tests
+- `tests/integration/test_relationship_pipeline.py` — 14 integration tests
 
 ### Repository changes
-- `src/repositories/evidence_repository.py` — added `exists_by_source_id()` for global idempotency check
-- `src/adapters/postgres/evidence_adapter.py` — implemented `exists_by_source_id()`
-- `src/domain/__init__.py` — exported `CreateVersionCommand`
+- `src/repositories/relationship_repository.py` — added `exists_by_entities()` for DB-level dedup
+- `src/adapters/postgres/relationship_adapter.py` — implemented `exists_by_entities()` + fixed `func` import
+- `src/api/routers/ingestion.py` — wired `RelationshipExtractor`, `RelationshipValidator`, `RelationshipIngestionPipeline` into the DI factory
 
 ### Exit criteria met
-- [x] Extraction, normalization, deduplication, confidence scoring operational
-- [x] ≥90% precision on entity merge decisions (50-record benchmark: 100% precision achieved)
-- [x] Idempotent ingestion: double-ingest same record → `SKIPPED_DUPLICATE`, zero duplicates
-- [x] 97/97 tests passing, 80.14% coverage (≥80% threshold)
+- [x] Relationship extraction + type-constraint validation operational
+- [x] ≥85% precision on relationship type classification (30-record benchmark: 100%)
+- [x] No invalid entity-type constraint violations pass through (validator blocks them, emits event)
+- [x] Idempotent: double-ingest same record → no duplicate relationships
+- [x] 149/149 tests passing, 81.75% coverage (≥80% threshold)
 
 ## Known limitations
-- Content-based extraction uses rule-based heuristics (no ML/NLP library); Phase 5 adds pgvector embeddings
-- Fuzzy matching uses stdlib `difflib.SequenceMatcher` (Levenshtein-class); precision sufficient for Phase 3
-- Partial ingestion (crash between entity create and evidence create) leaves a record processable on re-ingest
+- Content-based extraction is rule-based (33 verb patterns); ML/NLP upgrade planned for Phase 5
+- Bidirectional relationships (IS_SAME_AS, RELATED_TO) not automatically created in reverse direction — consumer must issue both directions if needed
+- Active voice patterns ("Alice created Report") not handled; only passive-by and direct patterns supported
 
 ## Boundary
-- Do NOT begin Phase 4 (Relationship Engine) until the user approves.
-- Relationship extraction, evidence linking, and type-constraint validation not started.
+- Do NOT begin Phase 5 (Query Engine) until the user approves.
 
 ## Next phase
-Phase 4 — Relationship Engine. See `33-next-actions.md`.
+Phase 5 — Query Engine. See `33-next-actions.md`.

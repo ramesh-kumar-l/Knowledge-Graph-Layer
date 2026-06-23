@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from src.domain.enums import EntityType
+from src.domain.enums import EntityType, RelationshipType
 
 
 def _utcnow() -> datetime:
@@ -54,7 +54,50 @@ class IngestionResult(BaseModel):
     status: str  # "PROCESSED" | "SKIPPED_DUPLICATE"
     entities_created: int = 0
     entities_matched: int = 0
+    relationships_created: int = 0
+    relationships_skipped: int = 0
     events: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class ResolvedEntityRef(BaseModel):
+    """Entity resolved by the entity pipeline — passed to relationship extraction."""
+
+    entity_id: UUID
+    entity_type: EntityType
+    name: str
+    aliases: list[str] = Field(default_factory=list)
+
+
+class CandidateRelationship(BaseModel):
+    """Proposed relationship extracted from MemoryRecord, before persistence."""
+
+    from_entity_id: UUID
+    from_entity_type: EntityType
+    to_entity_id: UUID
+    to_entity_type: EntityType
+    relationship_type: RelationshipType
+    confidence: float = Field(ge=0.0, le=1.0, default=0.0)
+    extraction_reason: str = ""
+
+
+class RelationshipConstraintViolated(BaseModel):
+    event_type: str = "RelationshipConstraintViolated"
+    from_entity_id: UUID
+    to_entity_id: UUID
+    relationship_type: str
+    from_entity_type: str
+    to_entity_type: str
+    timestamp: datetime = Field(default_factory=_utcnow)
+
+
+class RelationshipCreatedEvent(BaseModel):
+    event_type: str = "RelationshipCreatedEvent"
+    relationship_id: UUID
+    from_entity_id: UUID
+    to_entity_id: UUID
+    relationship_type: str
+    memory_record_id: str
+    timestamp: datetime = Field(default_factory=_utcnow)
 
 
 class KnowledgeUpdatedEvent(BaseModel):

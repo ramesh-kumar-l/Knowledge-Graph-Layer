@@ -55,3 +55,12 @@ class RelationshipRepository(ABC):
         self, rel_id: UUID, confidence: float, changed_by: str
     ) -> Relationship:
         """Update confidence score after trust recomputation."""
+
+    @abstractmethod
+    async def exists_by_entities(
+        self,
+        from_entity_id: UUID,
+        to_entity_id: UUID,
+        rel_type: RelationshipType,
+    ) -> bool:
+        """True if an active relationship of this type already exists between these entities."""

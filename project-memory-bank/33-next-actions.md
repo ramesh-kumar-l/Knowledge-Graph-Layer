@@ -1,56 +1,49 @@
 # 33 — Next Actions
 
-Phase 3 is complete. Awaiting approval for Phase 4.
+Phase 4 is complete. Awaiting approval for Phase 5.
 
-## On approval: begin Phase 4 — Relationship Engine
+## On approval: begin Phase 5 — Query Engine
 
-Phase 4 extracts relationships between resolved entities and stores them with evidence.
+Phase 5 adds traversal, semantic similarity search, and pgvector embeddings.
 
-### Phase 4 deliverables
+### Phase 5 deliverables
 
-1. **Relationship extractor** (`src/ingestion/relationship_extractor.py`)
-   - Parse MemoryRecord content → detect relationship assertions between entities
-   - Map to 36 RelationshipType taxonomy (8 categories)
-   - Validate against entity-type constraints (12-knowledge-graph-model.md)
+1. **Graph traversal service** (`src/services/graph_traversal_service.py`)
+   - Depth-N traversal from a root entity (default depth 3)
+   - Direction filter: outbound / inbound / both
+   - Relationship type filter
+   - p99 < 200ms target (SQLite test, PostgreSQL production)
 
-2. **Relationship ingestion pipeline** (`src/ingestion/relationship_pipeline.py`)
-   - Receive already-resolved entity pairs from entity pipeline
-   - Deduplicate by (from_entity_id, to_entity_id, relationship_type)
-   - Attach Evidence + Provenance per relationship
-   - Compute TrustScore for relationship confidence
-   - No self-loops enforced (domain invariant from Phase 1)
+2. **Query router** (`src/api/routers/query.py`)
+   - `GET /v1/entities/{id}/graph` — subgraph up to depth N
+   - `GET /v1/entities/{id}/neighbors` — direct relationships
+   - `GET /v1/entities/search` — name search with type filter
+   - `GET /v1/entities/{id}/path/{to_id}` — shortest path between two entities
 
-3. **Type constraint validator** (`src/ingestion/relationship_validator.py`)
-   - Enforce valid (from_type, relationship_type, to_type) triples
-   - Example: ASSIGNED_TO only valid from TASK → PERSON
-   - Emit `RelationshipConstraintViolated` if invalid; skip creation
+3. **pgvector semantic search** (Phase 5b, if embedding API available)
+   - `GET /v1/entities/similar` — vector similarity search
+   - Embedding generation deferred to external call (OpenAI/Anthropic API)
 
 4. **Tests** — unit + integration:
-   - Relationship extraction from text
-   - Constraint validation: valid and invalid triples
-   - End-to-end: MemoryRecord → resolved entities → relationships created
-   - Duplicate relationship handling (idempotent)
+   - Traversal at depth 1, 2, 3 from fixture graphs
+   - Circular graph (no infinite loop)
+   - Path between connected + disconnected entities
+   - Search by name substring
 
-### Phase 4 file structure
+### Phase 5 file structure
 ```
 src/
-  ingestion/
-    relationship_extractor.py   (< 200 lines)
-    relationship_pipeline.py    (< 200 lines)
-    relationship_validator.py   (< 150 lines)
-tests/
-  unit/
-    test_relationship_extractor.py
-    test_relationship_validator.py
-  integration/
-    test_relationship_pipeline.py
+  services/
+    graph_traversal_service.py   (< 200 lines)
+  api/
+    routers/
+      query.py                   (< 150 lines)
 ```
 
-### Phase 4 exit criteria
-- Relationship extraction, type-constraint validation operational.
-- ≥85% precision on relationship type classification (against fixture corpus).
-- No invalid entity-type constraint violations pass through.
-- Idempotent: double-ingest same record → no duplicate relationships.
-- All tests passing with SQLite in-memory; ≥80% coverage maintained.
+### Phase 5 exit criteria
+- Depth-3 traversal returns correct subgraph; circular references handled.
+- All 6 query types from 13-query-model.md implemented (or documented as deferred).
+- p99 < 200ms on depth-3 traversal against 1k-node SQLite fixture.
+- ≥80% coverage maintained.
 
 _Do not proceed without explicit user approval (phase-execution model)._

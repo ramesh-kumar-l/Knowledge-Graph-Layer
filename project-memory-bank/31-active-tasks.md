@@ -50,5 +50,19 @@
 - [x] `tests/integration/test_entity_pipeline.py` — 14 tests (50-record benchmark ≥90% precision ✓).
 - [x] 97/97 tests pass, 80.14% coverage.
 
+### Phase 4 — Relationship Engine
+- [x] `src/ingestion/relationship_extractor.py` — 33-rule pattern extractor; metadata-driven + heuristics.
+- [x] `src/ingestion/relationship_validator.py` — Entity-type constraint table (8 constrained types + IS_SAME_AS).
+- [x] `src/ingestion/relationship_pipeline.py` — Idempotent relationship persistence with Evidence + TrustScore.
+- [x] `src/ingestion/models.py` — Added ResolvedEntityRef, CandidateRelationship, 2 domain events, extended IngestionResult.
+- [x] `src/ingestion/entity_pipeline.py` — Wired relationship pipeline (optional) after entity resolution.
+- [x] `src/repositories/relationship_repository.py` — Added `exists_by_entities()` abstract method.
+- [x] `src/adapters/postgres/relationship_adapter.py` — Implemented `exists_by_entities()`.
+- [x] `src/api/routers/ingestion.py` — Wired full pipeline (entity + relationship) in DI factory.
+- [x] `tests/unit/test_relationship_extractor.py` — 15 tests + 30-record precision benchmark.
+- [x] `tests/unit/test_relationship_validator.py` — 24 tests.
+- [x] `tests/integration/test_relationship_pipeline.py` — 14 tests.
+- [x] 149/149 tests pass, 81.75% coverage.
+
 ## Pending (blocked on approval)
-- [ ] Phase 4 — Relationship Engine (extraction, evidence linking, type-constraint validation).
+- [ ] Phase 5 — Query Engine (traversal, semantic search, pgvector embeddings).

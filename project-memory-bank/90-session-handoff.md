@@ -1,78 +1,70 @@
 # 90 — Session Handoff
 
-**Session date:** 2026-06-23
-**Phases completed:** Phase 0, Phase 1, Phase 2, Phase 3
+**Session date:** 2026-06-24
+**Phases completed:** Phase 0, Phase 1, Phase 2, Phase 3, Phase 4
 
 ---
 
-## Phase 3 Summary — Entity Engine
+## Phase 4 Summary — Relationship Engine
 
 ### What was built
 
-**Ingestion models (`src/ingestion/models.py`):**
-- `MemoryRecord` — input record from SCP Memory Core
-- `CandidateEntity` — extracted entity before identity resolution
-- `ResolutionStrategy` enum — EXACT_NAME, ALIAS, FUZZY, NEW
-- `IngestionResult` — pipeline output with event list
-- Domain events: `KnowledgeUpdatedEvent`, `PotentialDuplicateDetected`, `KnowledgeConflictDetected`
+**New models (`src/ingestion/models.py`):**
+- `ResolvedEntityRef` — resolved entity reference passed from entity pipeline to relationship extractor
+- `CandidateRelationship` — extracted relationship before persistence (from_id, to_id, type, confidence)
+- `RelationshipConstraintViolated` — domain event emitted when type constraint fails
+- `RelationshipCreatedEvent` — domain event emitted on successful relationship creation
+- `IngestionResult` — extended with `relationships_created`, `relationships_skipped`
 
-**Normalizer (`src/ingestion/normalizer.py`):**
-- `normalize_name()` — NFC unicode, title case, collapse whitespace
-- `normalize_for_comparison()` — lowercase, strip punctuation (for fuzzy matching)
-- `build_aliases()` — derive lowercase variant + normalized extras
-- `normalize_attribute_keys()` — snake_case key normalization
+**Relationship extractor (`src/ingestion/relationship_extractor.py`):**
+- 33 verb-pattern rules covering all major RelationshipType categories
+- Two extraction passes: metadata.relationships (0.95) → content sentence patterns (0.65–0.85)
+- Sentence-level scoping (no cross-sentence false matches)
+- Deduplication by (from_id, to_id, rel_type) before returning
+- Benchmark: 30/30 fixture records correctly classified (100% precision ≥ 85% exit criterion)
 
-**Entity extractor (`src/ingestion/entity_extractor.py`):**
-- Three-pass extraction: metadata.entities (0.95 confidence) > quoted strings > capitalized phrase heuristics
-- 12 entity type keyword classifiers
-- Phrase-start filter: prevents verbs/gerunds ("processing", "working", etc.) from leading extractions
-- Type defaults applied: TASK→{status:TODO}, GOAL→{status:OPEN}, PROJECT→{status:ACTIVE}
-- Deduplication in `seen` set by `(name.lower(), entity_type)` key
+**Relationship validator (`src/ingestion/relationship_validator.py`):**
+- Constraint table for 8 typed relationships: ASSIGNED_TO, AUTHORED_BY, WORKS_TOWARD, REPORTS_TO, MEMBER_OF, DEPENDS_ON, REQUIRES, COLLABORATES_ON
+- IS_SAME_AS: special same-type-only rule
+- All other relationships: unconstrained (any entity types allowed)
 
-**Deduplication engine (`src/ingestion/deduplicator.py`):**
-- Strategy priority: EXACT_NAME (0.90) → ALIAS (0.85) → FUZZY (0.60–0.80) → NEW (0.00)
-- Fuzzy matching via `difflib.SequenceMatcher` (stdlib, no extra deps)
-- `PotentialDuplicateDetected` emitted when fuzzy similarity < 0.70 threshold
+**Relationship pipeline (`src/ingestion/relationship_pipeline.py`):**
+- In-batch dedup by (from_id, to_id, rel_type)
+- Constraint validation → emits RelationshipConstraintViolated and skips
+- DB-level idempotency via `RelationshipRepository.exists_by_entities()`
+- Creates Relationship → Evidence (SubjectType.RELATIONSHIP) → Provenance → TrustScore
+- Returns (created, skipped, events) tuple to entity pipeline
 
-**Conflict detector (`src/ingestion/conflict_detector.py`):**
-- Detects contradictory values for `_CONFLICTABLE_ATTRS` (status, role, email, level, priority, etc.)
-- Calls `version_service.create_version_before_write()` then `entity_repo.update()` to flag DISPUTED
-- Skips re-flagging entities already DISPUTED
-
-**Entity ingestion pipeline (`src/ingestion/entity_pipeline.py`):**
-- 9-step orchestration: RECEIVE → DEDUPLICATE → CLASSIFY → RESOLVE → ATTACH → SCORE → CONFLICT → VERSION → EMIT
-- Global idempotency: `evidence.exists_by_source_id(record.id)` checked first → SKIPPED_DUPLICATE
-- Per-entity idempotency: `DuplicateEvidenceError` caught gracefully
-- Evidence confidence = resolution confidence (or candidate confidence for NEW)
-- Trust score recomputed after every evidence attachment
-
-**Ingestion API (`src/api/routers/ingestion.py`):**
-- `POST /v1/ingest/memory-record` → `IngestionResult`
-- Idempotent: same `record.id` → status=SKIPPED_DUPLICATE
+**Entity pipeline (`src/ingestion/entity_pipeline.py`):**
+- Collects `ResolvedEntityRef` during entity resolution loop
+- After entity loop: calls `rel_extractor.extract()` then `rel_pipeline.ingest()`
+- `IngestionResult` now includes `relationships_created`, `relationships_skipped`
+- Relationship pipeline is optional (wired via constructor for API; None for legacy/tests)
 
 **Repository additions:**
-- `EvidenceRepository.exists_by_source_id(source_id)` — abstract method
-- `PostgresEvidenceAdapter.exists_by_source_id()` — implemented
-- `src/domain.__init__` exports `CreateVersionCommand`
+- `RelationshipRepository.exists_by_entities(from_id, to_id, rel_type)` — abstract method
+- `PostgresRelationshipAdapter.exists_by_entities()` — implemented with COUNT query
+
+**API wiring (`src/api/routers/ingestion.py`):**
+- `POST /v1/ingest/memory-record` now runs the full entity + relationship pipeline
 
 ---
 
 ## Test results
-- 97/97 tests passing
-- 80.14% coverage (≥80% threshold satisfied)
-- Precision benchmark: 40 exact-match records → 100% precision (≥90% exit criterion ✓)
+- 149/149 tests passing (97 from Phase 3 + 52 new)
+- 81.75% coverage (≥80% threshold satisfied)
+- Precision benchmark: 30/30 = 100% precision (≥85% exit criterion ✓)
 
 ---
 
 ## Known limitations / next-session notes
-
-- Content-based extraction is rule-based; ML/NLP upgrade planned for Phase 5
-- Fuzzy search uses prefix (first 3 chars) to gather candidates — very long names with generic prefixes may miss matches
-- Phase 4 (Relationship Engine) relationship extraction not started
-- `_PHRASE_START_FILTER` list in entity_extractor.py should grow over time as patterns emerge
+- Content-based extraction is rule-based (33 patterns); ML/NLP upgrade planned for Phase 5
+- Active voice ("Alice created Report") not matched; passive-by and direct patterns only
+- Bidirectional relationships not automatically reversed; caller must issue both directions
+- Phase 5 (Query Engine) not started
 
 ## Recommended next phase
-Phase 4 — Relationship Engine. See `33-next-actions.md` for full plan.
+Phase 5 — Query Engine. See `33-next-actions.md` for full plan.
 
 ## STOP
-Phase 3 complete. Awaiting explicit user approval before Phase 4.
+Phase 4 complete. Awaiting explicit user approval before Phase 5.
