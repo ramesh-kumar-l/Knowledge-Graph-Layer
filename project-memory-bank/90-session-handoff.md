@@ -1,61 +1,78 @@
 # 90 — Session Handoff
 
 **Session date:** 2026-06-23
-**Phases completed:** Phase 0, Phase 1, Phase 2
+**Phases completed:** Phase 0, Phase 1, Phase 2, Phase 3
 
 ---
 
-## Phase 2 Summary — Storage Foundation
-
-### Technical decisions ratified
-- **ADR-0005:** Python 3.11+ / FastAPI / Pydantic v2 / SQLAlchemy 2.0 async / Uvicorn
-- **ADR-0006:** PostgreSQL 16 + pgvector; recursive CTEs for graph traversal ≤ 5 hops
+## Phase 3 Summary — Entity Engine
 
 ### What was built
 
-**Domain layer (`src/domain/`):**
-- 7 Pydantic models: Entity, Relationship, Evidence, Provenance, TrustScore, Version + all enums
-- Pydantic v2 frozen models for immutable objects (Evidence, Provenance, Version, TrustScore)
-- Domain invariants enforced (no self-loops, confidence bounds, name min-length, content 4096 char cap)
+**Ingestion models (`src/ingestion/models.py`):**
+- `MemoryRecord` — input record from SCP Memory Core
+- `CandidateEntity` — extracted entity before identity resolution
+- `ResolutionStrategy` enum — EXACT_NAME, ALIAS, FUZZY, NEW
+- `IngestionResult` — pipeline output with event list
+- Domain events: `KnowledgeUpdatedEvent`, `PotentialDuplicateDetected`, `KnowledgeConflictDetected`
 
-**Repository ports (`src/repositories/`):**
-- 6 abstract async interfaces; zero storage coupling
-- Signed contracts for each operation (deduplication, cascade, batch, upsert)
+**Normalizer (`src/ingestion/normalizer.py`):**
+- `normalize_name()` — NFC unicode, title case, collapse whitespace
+- `normalize_for_comparison()` — lowercase, strip punctuation (for fuzzy matching)
+- `build_aliases()` — derive lowercase variant + normalized extras
+- `normalize_attribute_keys()` — snake_case key normalization
 
-**PostgreSQL adapters (`src/adapters/postgres/`):**
-- ORM models using `sa.Uuid()` (SQLite-portable; JSONB in migration, JSON in ORM)
-- 6 concrete adapters: full CRUD, soft-delete, cascade, search, upsert
+**Entity extractor (`src/ingestion/entity_extractor.py`):**
+- Three-pass extraction: metadata.entities (0.95 confidence) > quoted strings > capitalized phrase heuristics
+- 12 entity type keyword classifiers
+- Phrase-start filter: prevents verbs/gerunds ("processing", "working", etc.) from leading extractions
+- Type defaults applied: TASK→{status:TODO}, GOAL→{status:OPEN}, PROJECT→{status:ACTIVE}
+- Deduplication in `seen` set by `(name.lower(), entity_type)` key
 
-**Services (`src/services/`):**
-- `TrustScoreService`: computes formula from 14-trust-model.md; persists via TrustScoreRepository
-- `VersionService`: `create_version_before_write()` → computes JSON Patch diff from previous version
+**Deduplication engine (`src/ingestion/deduplicator.py`):**
+- Strategy priority: EXACT_NAME (0.90) → ALIAS (0.85) → FUZZY (0.60–0.80) → NEW (0.00)
+- Fuzzy matching via `difflib.SequenceMatcher` (stdlib, no extra deps)
+- `PotentialDuplicateDetected` emitted when fuzzy similarity < 0.70 threshold
 
-**FastAPI app (`src/api/`):**
-- 3 routers: `/v1/entities`, `/v1/relationships`, `/v1/evidence`
-- Version-before-write enforced in entity create/update endpoints
-- Trust score recomputed after every Evidence create
-- Application-layer referential integrity (entity existence checks on relationship create)
+**Conflict detector (`src/ingestion/conflict_detector.py`):**
+- Detects contradictory values for `_CONFLICTABLE_ATTRS` (status, role, email, level, priority, etc.)
+- Calls `version_service.create_version_before_write()` then `entity_repo.update()` to flag DISPUTED
+- Skips re-flagging entities already DISPUTED
 
-**Migrations (`migrations/`):**
-- Alembic env reads `SYNC_DATABASE_URL` from `.env`
-- `001_initial_schema.py`: all 6 tables, PostgreSQL JSONB columns, all indexes from 22-graph-schema.md
+**Entity ingestion pipeline (`src/ingestion/entity_pipeline.py`):**
+- 9-step orchestration: RECEIVE → DEDUPLICATE → CLASSIFY → RESOLVE → ATTACH → SCORE → CONFLICT → VERSION → EMIT
+- Global idempotency: `evidence.exists_by_source_id(record.id)` checked first → SKIPPED_DUPLICATE
+- Per-entity idempotency: `DuplicateEvidenceError` caught gracefully
+- Evidence confidence = resolution confidence (or candidate confidence for NEW)
+- Trust score recomputed after every evidence attachment
 
-**Tests:**
-- 3 unit test files (20+ cases) — no DB; pure domain logic + service mocks
-- 3 integration test files (21+ cases) — SQLite in-memory via aiosqlite
-- Target: ≥ 80% coverage enforced in `pyproject.toml`
+**Ingestion API (`src/api/routers/ingestion.py`):**
+- `POST /v1/ingest/memory-record` → `IngestionResult`
+- Idempotent: same `record.id` → status=SKIPPED_DUPLICATE
+
+**Repository additions:**
+- `EvidenceRepository.exists_by_source_id(source_id)` — abstract method
+- `PostgresEvidenceAdapter.exists_by_source_id()` — implemented
+- `src/domain.__init__` exports `CreateVersionCommand`
+
+---
+
+## Test results
+- 97/97 tests passing
+- 80.14% coverage (≥80% threshold satisfied)
+- Precision benchmark: 40 exact-match records → 100% precision (≥90% exit criterion ✓)
 
 ---
 
 ## Known limitations / next-session notes
 
-- SQLite integration tests don't cover JSONB operators; run against PostgreSQL for full coverage
-- `search_by_name` uses `ilike` — PostgreSQL full-text search upgrade recommended in Phase 5
-- `soft_delete_by_entity` in entity adapter does NOT cascade yet (relationship cascade lives in relationship adapter) — callers must call both
-- Phase 3 ingestion pipeline (entity extraction, deduplication) not started
+- Content-based extraction is rule-based; ML/NLP upgrade planned for Phase 5
+- Fuzzy search uses prefix (first 3 chars) to gather candidates — very long names with generic prefixes may miss matches
+- Phase 4 (Relationship Engine) relationship extraction not started
+- `_PHRASE_START_FILTER` list in entity_extractor.py should grow over time as patterns emerge
 
 ## Recommended next phase
-Phase 3 — Entity Engine. See `33-next-actions.md` for full plan.
+Phase 4 — Relationship Engine. See `33-next-actions.md` for full plan.
 
 ## STOP
-Phase 2 complete. Awaiting explicit user approval before Phase 3.
+Phase 3 complete. Awaiting explicit user approval before Phase 4.

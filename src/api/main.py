@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 from src.adapters.postgres.connection import engine
 from src.adapters.postgres.orm_models import Base
-from src.api.routers import entities, relationships, evidence
+from src.api.routers import entities, relationships, evidence, ingestion
 
 
 @asynccontextmanager
@@ -26,6 +26,7 @@ app = FastAPI(
 app.include_router(entities.router, prefix="/v1")
 app.include_router(relationships.router, prefix="/v1")
 app.include_router(evidence.router, prefix="/v1")
+app.include_router(ingestion.router, prefix="/v1")
 
 
 @app.get("/health")

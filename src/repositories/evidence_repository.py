@@ -34,3 +34,7 @@ class EvidenceRepository(ABC):
     @abstractmethod
     async def count_disputed(self, subject_id: UUID) -> int:
         """Count DISPUTED evidence records for conflict penalty calculation."""
+
+    @abstractmethod
+    async def exists_by_source_id(self, source_id: str) -> bool:
+        """Global idempotency check — True if any evidence with this source_id exists."""

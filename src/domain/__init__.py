@@ -7,7 +7,7 @@ from .relationship import Relationship, CreateRelationshipCommand
 from .evidence import Evidence, TransformationStep, CreateEvidenceCommand
 from .provenance import Provenance, CreateProvenanceCommand
 from .trust_score import TrustScore
-from .version import Version
+from .version import Version, CreateVersionCommand
 
 __all__ = [
     "EntityType", "RelationshipType", "VerificationState",
@@ -17,5 +17,5 @@ __all__ = [
     "Evidence", "TransformationStep", "CreateEvidenceCommand",
     "Provenance", "CreateProvenanceCommand",
     "TrustScore",
-    "Version",
+    "Version", "CreateVersionCommand",
 ]

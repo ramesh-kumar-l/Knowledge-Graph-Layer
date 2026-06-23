@@ -36,5 +36,19 @@
 - [x] `tests/integration/test_relationship_repository.py` — 6 traversal + cascade tests.
 - [x] `tests/integration/test_evidence_repository.py` — 5 idempotency + query tests.
 
+### Phase 3 — Entity Engine
+- [x] `src/ingestion/models.py` — MemoryRecord, CandidateEntity, domain events.
+- [x] `src/ingestion/normalizer.py` — normalize_name, build_aliases, normalize_for_comparison.
+- [x] `src/ingestion/entity_extractor.py` — rule-based extractor (metadata + content + heuristics).
+- [x] `src/ingestion/deduplicator.py` — DeduplicationEngine with 4-strategy resolution.
+- [x] `src/ingestion/conflict_detector.py` — ConflictDetector, DISPUTED flagging, version bump.
+- [x] `src/ingestion/entity_pipeline.py` — full 9-step pipeline orchestration.
+- [x] `src/api/routers/ingestion.py` — POST /v1/ingest/memory-record.
+- [x] `tests/unit/test_normalizer.py` — 21 tests.
+- [x] `tests/unit/test_deduplicator.py` — 8 tests.
+- [x] `tests/unit/test_conflict_detector.py` — 7 tests.
+- [x] `tests/integration/test_entity_pipeline.py` — 14 tests (50-record benchmark ≥90% precision ✓).
+- [x] 97/97 tests pass, 80.14% coverage.
+
 ## Pending (blocked on approval)
-- [ ] Phase 3 — Entity Engine (extraction, normalization, deduplication, confidence scoring).
+- [ ] Phase 4 — Relationship Engine (extraction, evidence linking, type-constraint validation).

@@ -92,3 +92,9 @@ class PostgresEvidenceAdapter(EvidenceRepository):
             )
         )
         return result.scalar_one()
+
+    async def exists_by_source_id(self, source_id: str) -> bool:
+        result = await self._session.execute(
+            select(func.count()).where(EvidenceORM.source_id == source_id)
+        )
+        return result.scalar_one() > 0

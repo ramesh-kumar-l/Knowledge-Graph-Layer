@@ -1,69 +1,56 @@
 # 33 — Next Actions
 
-Phase 2 is complete. Awaiting approval for Phase 3.
+Phase 3 is complete. Awaiting approval for Phase 4.
 
-## On approval: begin Phase 3 — Entity Engine
+## On approval: begin Phase 4 — Relationship Engine
 
-Phase 3 takes the Phase 2 storage layer and adds the intelligence to populate it
-from raw SCP Memory Core records.
+Phase 4 extracts relationships between resolved entities and stores them with evidence.
 
-### Phase 3 deliverables
+### Phase 4 deliverables
 
-1. **Entity extractor** (`src/ingestion/entity_extractor.py`)
-   - Parse SCP Memory Core record → extract candidate entities
-   - Map to 12 EntityType taxonomy
-   - Populate type-specific attributes from `12-knowledge-graph-model.md`
+1. **Relationship extractor** (`src/ingestion/relationship_extractor.py`)
+   - Parse MemoryRecord content → detect relationship assertions between entities
+   - Map to 36 RelationshipType taxonomy (8 categories)
+   - Validate against entity-type constraints (12-knowledge-graph-model.md)
 
-2. **Name normalizer** (`src/ingestion/normalizer.py`)
-   - Canonicalize names (case, punctuation, unicode)
-   - Build alias set from raw record fields
+2. **Relationship ingestion pipeline** (`src/ingestion/relationship_pipeline.py`)
+   - Receive already-resolved entity pairs from entity pipeline
+   - Deduplicate by (from_entity_id, to_entity_id, relationship_type)
+   - Attach Evidence + Provenance per relationship
+   - Compute TrustScore for relationship confidence
+   - No self-loops enforced (domain invariant from Phase 1)
 
-3. **Deduplication engine** (`src/ingestion/deduplicator.py`)
-   - Identity resolution using confidence table from `11-memory-model.md`:
-     - 1.0 → exact UUID match
-     - 0.9 → exact name + same type
-     - 0.85 → alias match
-     - 0.6–0.8 → fuzzy match (Levenshtein) → INFERRED
-     - < 0.7 → new entity, emit `PotentialDuplicateDetected`
-   - Never auto-merge below threshold 0.7
+3. **Type constraint validator** (`src/ingestion/relationship_validator.py`)
+   - Enforce valid (from_type, relationship_type, to_type) triples
+   - Example: ASSIGNED_TO only valid from TASK → PERSON
+   - Emit `RelationshipConstraintViolated` if invalid; skip creation
 
-4. **Entity ingestion pipeline** (`src/ingestion/entity_pipeline.py`)
-   - 9-step pipeline: RECEIVE → DEDUPLICATE → CLASSIFY → RESOLVE → EXTRACT
-     → ATTACH (evidence + provenance) → SCORE → VERSION → EMIT
-   - Idempotent: skip if Evidence `(subjectId, sourceId)` already exists
+4. **Tests** — unit + integration:
+   - Relationship extraction from text
+   - Constraint validation: valid and invalid triples
+   - End-to-end: MemoryRecord → resolved entities → relationships created
+   - Duplicate relationship handling (idempotent)
 
-5. **Conflict detector** (`src/ingestion/conflict_detector.py`)
-   - Detects attribute contradictions across Evidence records
-   - Sets `verificationState = DISPUTED`, emits `KnowledgeConflictDetected`
-
-6. **Tests** — unit + integration covering:
-   - Extraction accuracy against fixture corpus
-   - Deduplication: true-positive merge ≥ 90% precision
-   - Idempotency: double-ingest same record → no duplicates
-
-### Phase 3 file structure
+### Phase 4 file structure
 ```
 src/
   ingestion/
-    __init__.py
-    entity_extractor.py    (< 200 lines)
-    normalizer.py          (< 150 lines)
-    deduplicator.py        (< 200 lines)
-    entity_pipeline.py     (< 250 lines)
-    conflict_detector.py   (< 150 lines)
+    relationship_extractor.py   (< 200 lines)
+    relationship_pipeline.py    (< 200 lines)
+    relationship_validator.py   (< 150 lines)
 tests/
   unit/
-    test_normalizer.py
-    test_deduplicator.py
-    test_conflict_detector.py
+    test_relationship_extractor.py
+    test_relationship_validator.py
   integration/
-    test_entity_pipeline.py
+    test_relationship_pipeline.py
 ```
 
-### Phase 3 exit criteria
-- Extraction, normalization, deduplication, and confidence scoring operational.
-- ≥ 90% precision on entity merge decisions (measured against 50-record test corpus).
-- Idempotent ingestion verified: double-ingestion of same record → zero duplicates.
-- All integration tests passing with SQLite in-memory.
+### Phase 4 exit criteria
+- Relationship extraction, type-constraint validation operational.
+- ≥85% precision on relationship type classification (against fixture corpus).
+- No invalid entity-type constraint violations pass through.
+- Idempotent: double-ingest same record → no duplicate relationships.
+- All tests passing with SQLite in-memory; ≥80% coverage maintained.
 
 _Do not proceed without explicit user approval (phase-execution model)._
