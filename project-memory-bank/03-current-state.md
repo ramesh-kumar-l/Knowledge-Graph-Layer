@@ -3,21 +3,43 @@
 **As of:** 2026-06-23
 
 ## Status
-Greenfield. The project-memory-bank has been **bootstrapped** (Phase 0). No domain-model
-design, no schema, and no implementation exist yet.
+**Phase 1 — Domain Model complete.** No implementation code exists yet.
 
-## Repository
-- `README.md` — title only.
-- `project-memory-bank/` — initialized with the full file structure (this bootstrap).
+## Repository structure
+
+```
+project-memory-bank/       -- single source of truth (all phases)
+docs/
+  adr/
+    ADR-0001-entity-taxonomy.md
+    ADR-0002-relationship-typing.md
+    ADR-0003-evidence-provenance.md
+    ADR-0004-versioning-strategy.md
+README.md
+```
 
 ## What exists
-- Foundational memory-bank docs (vision, thesis, architecture, roadmap, decisions).
-- Stubs for all Phase 1+ design docs, marked "Not started."
-- Active-state and handoff docs reflecting bootstrap-complete.
+
+### Domain model (Phase 1 — complete)
+- `10-domain-model.md` — Entity, Relationship, Evidence, Provenance, TrustScore, Version
+- `11-memory-model.md` — SCP Memory Core ingestion pipeline and mapping rules
+- `12-knowledge-graph-model.md` — 12 entity types + 36 relationship types (8 categories)
+- `13-query-model.md` — 6 query types with result envelopes and global parameters
+- `14-trust-model.md` — Confidence scoring formula, verification states, conflict detection
+- `22-graph-schema.md` — Logical schema for all 5 records (Entity, Relationship, Evidence, Provenance, TrustScore, Version)
+- `docs/adr/ADR-0001` through `ADR-0004` — Entity taxonomy, relationship typing, evidence/provenance, versioning
+
+### Foundation docs (Phase 0 — complete)
+- Vision, product thesis, system architecture, roadmap, technical decisions
 
 ## What does NOT exist yet
-- Phase 1 domain model, taxonomies, evidence/provenance models, graph schema, ADRs.
-- Any code, tests, storage, or UI.
+- Any implementation code, tests, storage layer, or APIs.
+- Physical schema (DDL, Cypher) — Phase 2.
+- Entity/relationship extraction engines — Phase 3/4.
+- Query engine — Phase 5.
+- Trust scoring engine — Phase 6.
+- UI — Phase 7.
 
 ## Next
-Awaiting explicit approval to begin **Phase 1 — Domain Model**. See `33-next-actions.md`.
+Awaiting explicit approval to begin **Phase 2 — Storage Foundation**.
+See `33-next-actions.md`.

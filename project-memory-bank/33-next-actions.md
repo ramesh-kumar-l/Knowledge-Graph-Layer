@@ -1,14 +1,35 @@
 # 33 — Next Actions
 
-1. **Approve the bootstrapped memory bank** (this session's output).
-2. On approval, begin **Phase 1 — Domain Model** (documentation only):
-   - Knowledge domain model (`10-domain-model.md`).
-   - Entity taxonomy + relationship taxonomy (`12-knowledge-graph-model.md`).
-   - Evidence model + provenance model (`10`/`14`).
-   - Logical graph schema (`22-graph-schema.md`).
-   - ADR documents under `docs/adr/`.
-   - No implementation.
-3. Phase 1 next decisions to capture in `05-technical-decisions.md`: entity taxonomy
-   boundaries, relationship typing model, evidence/provenance representation, versioning.
+Phase 1 is complete. Awaiting approval for Phase 2.
 
-_Do not proceed past step 1 without explicit approval (phase-execution model)._
+## On approval: begin Phase 2 — Storage Foundation
+
+Phase 2 deliverables (all require implementation code for the first time):
+
+1. **Choose implementation language** — ADR to ratify (DEC-0001 deferred this to Phase 2).
+   Recommended: Python (FastAPI / Pydantic) for rapid iteration and rich graph library ecosystem.
+2. **Choose storage backend** — ADR to ratify (DEC-0002 deferred this). Options:
+   - Neo4j / Memgraph (native graph; optimal for traversals)
+   - PostgreSQL + pgvector (relational + vector; operationally familiar)
+   - ArangoDB (multi-model; graph + document)
+3. **Physical schema** — DDL or Cypher scripts for all 6 record types.
+4. **Repository interfaces** — storage-agnostic ports (DEC-0002 pattern).
+5. **Repository adapters** — concrete implementation for chosen backend.
+6. **CRUD APIs** — entity/relationship create, read, update, soft-delete.
+7. **Versioning enforcement** — transaction-wrapped version-before-write.
+8. **Migration strategy** — schema migration tooling and runbook.
+9. **Unit + integration tests** — all repository operations covered.
+
+## File structure created in Phase 2
+```
+src/
+  domain/          -- pure domain models (from Phase 1 pseudo-schema)
+  repositories/    -- abstract repository interfaces (ports)
+  adapters/        -- concrete storage adapters
+  migrations/      -- schema migration scripts
+tests/
+  unit/
+  integration/
+```
+
+_Do not proceed without explicit user approval (phase-execution model)._

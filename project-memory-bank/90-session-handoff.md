@@ -1,39 +1,47 @@
 # 90 — Session Handoff
 
 **Session date:** 2026-06-23
-**Phase:** 0 — Bootstrap (complete)
+**Phases completed:** Phase 0 (Bootstrap) + Phase 1 (Domain Model)
 
-## Summary
-Bootstrapped the SCP Knowledge Graph Layer project-memory-bank from a greenfield repo
-(previously only `README.md`). Created the full 22-file structure with tiered content:
-foundational docs written in full, design docs scaffolded as marked stubs, active-state
-docs reflecting bootstrap-complete.
+## Phase 0 Summary
+Bootstrapped the project-memory-bank from a greenfield repo. Created 22 files with
+tiered content. Recorded DEC-0001 (language deferred) and DEC-0002 (storage-agnostic).
 
-## Files created
-- **Tier A (full content):** 00-project-vision, 01-product-thesis, 02-system-architecture,
-  03-current-state, 04-roadmap, 05-technical-decisions.
-- **Tier B (stubs, "Not started"):** 10-domain-model, 11-memory-model,
-  12-knowledge-graph-model, 13-query-model, 14-trust-model, 20-api-contracts,
-  21-storage-design, 22-graph-schema, 23-security-model, 40-ui-principles, 41-design-system.
-- **Tier C (full content):** 30-active-phase, 31-active-tasks, 32-known-issues,
-  33-next-actions, 90-session-handoff.
+## Phase 1 Summary
+Completed the full domain model — documentation only, language-agnostic.
 
-## Architecture decisions
-- **DEC-0001:** Implementation language deferred — Phase 1 stays language-neutral.
-- **DEC-0002:** Storage-agnostic repository interface (ports-and-adapters); concrete
-  backend chosen via ADR in Phase 2.
+### Files updated (Phase 1)
+- `10-domain-model.md` — Entity, Relationship, Evidence, Provenance, TrustScore, Version
+- `11-memory-model.md` — SCP Memory Core ingestion pipeline and mapping rules
+- `12-knowledge-graph-model.md` — 12 entity types + 36 relationship types (8 categories)
+- `13-query-model.md` — 6 query types, result envelope, global parameters, ranking
+- `14-trust-model.md` — Confidence formula, verification states, conflict detection, freshness
+- `22-graph-schema.md` — Logical schema for all record types, indexes, integrity rules
+- `03-current-state.md`, `05-technical-decisions.md`, `30-active-phase.md`,
+  `31-active-tasks.md`, `33-next-actions.md` — updated to reflect Phase 1 complete
 
-## Validation
-- All 22 master-prompt files present under `project-memory-bank/`.
-- Tier B files clearly marked "Status: Not started — Phase N deliverable."
-- No code, schema, or Phase 1 design produced (scope respected).
+### Files created (Phase 1)
+- `docs/adr/ADR-0001-entity-taxonomy.md` — 12 type taxonomy rationale
+- `docs/adr/ADR-0002-relationship-typing.md` — 36 types, 8 categories, directed default
+- `docs/adr/ADR-0003-evidence-provenance.md` — immutable evidence, single provenance
+- `docs/adr/ADR-0004-versioning-strategy.md` — append-only version log
+
+### Technical decisions made (Phase 1)
+- **DEC-0003:** Entity taxonomy — 12 canonical types with JSON attributes.
+- **DEC-0004:** Relationship typing — 36 types, 8 categories, directed by default.
+- **DEC-0005:** Evidence immutable; Provenance one-per-subject.
+- **DEC-0006:** Versioning append-only; current state in live record.
 
 ## Risks
-- None material at bootstrap stage. Deferring language/storage adds a small Phase 2
-  decision step but preserves portability (intentional trade-off).
+- Language and storage backend are still deferred (intentional per DEC-0001, DEC-0002).
+  Phase 2 must resolve both before any code is written.
+- JSON Patch diff computation in the Version log requires a mature library; choose carefully in Phase 2.
 
 ## Recommended next phase
-Phase 1 — Domain Model (documentation only).
+Phase 2 — Storage Foundation (first implementation phase).
+Key Phase 2 decisions: implementation language (ADR), storage backend (ADR),
+physical schema (DDL/Cypher), repository interfaces (ports), adapters, CRUD APIs,
+versioning enforcement, migration tooling, tests.
 
 ## STOP
-Bootstrap complete. Awaiting explicit user approval before any Phase 1 work.
+Phase 1 complete. Awaiting explicit user approval before Phase 2.
