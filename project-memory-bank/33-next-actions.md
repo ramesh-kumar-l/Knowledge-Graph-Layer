@@ -1,49 +1,53 @@
 # 33 — Next Actions
 
-Phase 4 is complete. Awaiting approval for Phase 5.
+Phase 5 is complete. Awaiting approval for Phase 6.
 
-## On approval: begin Phase 5 — Query Engine
+## On approval: begin Phase 6 — Trust Integration
 
-Phase 5 adds traversal, semantic similarity search, and pgvector embeddings.
+Phase 6 adds trust propagation across multi-hop paths, conflict resolution workflow,
+and the `/explain/{entityId}` endpoint.
 
-### Phase 5 deliverables
+### Phase 6 deliverables
 
-1. **Graph traversal service** (`src/services/graph_traversal_service.py`)
-   - Depth-N traversal from a root entity (default depth 3)
-   - Direction filter: outbound / inbound / both
-   - Relationship type filter
-   - p99 < 200ms target (SQLite test, PostgreSQL production)
+1. **Trust propagation service** (`src/services/trust_propagation_service.py`)
+   - Propagate trust score changes along outbound relationships
+   - Pessimistic propagation: path_confidence = min(all hop confidences)
+   - Recompute downstream TrustScores when an entity or relationship score changes
 
-2. **Query router** (`src/api/routers/query.py`)
-   - `GET /v1/entities/{id}/graph` — subgraph up to depth N
-   - `GET /v1/entities/{id}/neighbors` — direct relationships
-   - `GET /v1/entities/search` — name search with type filter
-   - `GET /v1/entities/{id}/path/{to_id}` — shortest path between two entities
+2. **Conflict resolution service** (`src/services/conflict_resolution_service.py`)
+   - Accept or reject conflicting evidence (`DISPUTED` → `VERIFIED` or `UNVERIFIED`)
+   - Version-log all state transitions
+   - Emit `KnowledgeConflictResolved` domain event
 
-3. **pgvector semantic search** (Phase 5b, if embedding API available)
-   - `GET /v1/entities/similar` — vector similarity search
-   - Embedding generation deferred to external call (OpenAI/Anthropic API)
+3. **Explain endpoint** (`src/api/routers/explain.py`)
+   - `GET /v1/explain/{entity_id}` — full trust breakdown:
+     - TrustScore components (evidenceWeight, freshnessDecay, verificationBonus, conflictPenalty)
+     - Evidence records attached
+     - Provenance chain
+     - Conflict history if DISPUTED
 
-4. **Tests** — unit + integration:
-   - Traversal at depth 1, 2, 3 from fixture graphs
-   - Circular graph (no infinite loop)
-   - Path between connected + disconnected entities
-   - Search by name substring
+4. **Trust-enriched graph traversal** — extend GraphTraversalService to optionally attach TrustScore to each returned node/edge
 
-### Phase 5 file structure
+5. **Tests** — unit + integration:
+   - Trust propagation: score change propagates 1, 2, 3 hops
+   - Conflict accept/reject transitions state correctly
+   - Explain endpoint returns correct components
+
+### Phase 6 file structure
 ```
 src/
   services/
-    graph_traversal_service.py   (< 200 lines)
+    trust_propagation_service.py   (< 200 lines)
+    conflict_resolution_service.py (< 150 lines)
   api/
     routers/
-      query.py                   (< 150 lines)
+      explain.py                   (< 120 lines)
 ```
 
-### Phase 5 exit criteria
-- Depth-3 traversal returns correct subgraph; circular references handled.
-- All 6 query types from 13-query-model.md implemented (or documented as deferred).
-- p99 < 200ms on depth-3 traversal against 1k-node SQLite fixture.
+### Phase 6 exit criteria
+- Trust propagation: score changes on entity A ripple to 3-hop downstream entities.
+- Conflict resolution: DISPUTED → VERIFIED/UNVERIFIED with version log entry.
+- `GET /v1/explain/{entity_id}` returns full trust breakdown JSON.
 - ≥80% coverage maintained.
 
 _Do not proceed without explicit user approval (phase-execution model)._

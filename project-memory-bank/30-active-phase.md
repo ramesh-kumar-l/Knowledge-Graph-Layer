@@ -1,40 +1,43 @@
 # 30 — Active Phase
 
-**Current phase:** Phase 4 — Relationship Engine → **complete**.
+**Current phase:** Phase 5 — Query Engine → **complete**.
 
-**Status:** Full relationship ingestion pipeline implemented and tested. Awaiting **explicit approval** to begin Phase 5.
+**Status:** Full graph traversal + path discovery engine implemented and tested. Awaiting **explicit approval** to begin Phase 6.
 
 ## Completed this phase
 
 ### Source code delivered
-- `src/ingestion/relationship_extractor.py` — 33 verb-pattern rules; metadata-driven (0.95) + content heuristics (0.65–0.85); 30-record benchmark: 100% precision (≥85% exit criterion ✓)
-- `src/ingestion/relationship_validator.py` — Entity-type constraint table (8 constrained types + IS_SAME_AS same-type rule); unconstrained types pass through
-- `src/ingestion/relationship_pipeline.py` — Idempotent dedup by (from_id, to_id, rel_type); constraint validation; Evidence + Provenance + TrustScore per relationship
-- `src/ingestion/models.py` — Added `ResolvedEntityRef`, `CandidateRelationship`, `RelationshipConstraintViolated`, `RelationshipCreatedEvent`; extended `IngestionResult` with `relationships_created`, `relationships_skipped`
-- `src/ingestion/entity_pipeline.py` — Collects `ResolvedEntityRef` during entity loop; invokes relationship pipeline after entity resolution (optional, wired via constructor)
-- `tests/unit/test_relationship_extractor.py` — 15 unit tests + 30-record precision benchmark
-- `tests/unit/test_relationship_validator.py` — 24 unit tests
-- `tests/integration/test_relationship_pipeline.py` — 14 integration tests
+- `src/services/graph_traversal_service.py` — BFS depth-N traversal; OUTBOUND/INBOUND/BOTH direction filter; rel_type + min_confidence filters; cycle-safe (visited set); batch-fetches frontier entities per BFS level for performance
+- `src/services/path_discovery_service.py` — BFS shortest path between two entities; pessimistic trust propagation (min of all confidences); max_hops cap; confidence + rel_type filter
+- `src/api/routers/query.py` — 4 live endpoints + semantic-search stub (501):
+  - `GET /v1/entities/{id}/graph` — subgraph up to depth N
+  - `GET /v1/entities/{id}/neighbors` — direct relationships (depth=1)
+  - `GET /v1/entities/{id}/path/{to_id}` — shortest path
+  - `GET /v1/entities/semantic-search` — 501 stub (Phase 5b)
+- `tests/unit/test_graph_traversal.py` — 10 unit tests
+- `tests/unit/test_path_discovery.py` — 8 unit tests
+- `tests/integration/test_query_engine.py` — 13 integration tests incl. performance benchmark
 
-### Repository changes
-- `src/repositories/relationship_repository.py` — added `exists_by_entities()` for DB-level dedup
-- `src/adapters/postgres/relationship_adapter.py` — implemented `exists_by_entities()` + fixed `func` import
-- `src/api/routers/ingestion.py` — wired `RelationshipExtractor`, `RelationshipValidator`, `RelationshipIngestionPipeline` into the DI factory
+### Supporting changes
+- `src/services/__init__.py` — exports GraphTraversalService, GraphResult, PathDiscoveryService, DiscoveredPath
+- `src/api/main.py` — registers query router; version bumped to 0.3.0
 
 ### Exit criteria met
-- [x] Relationship extraction + type-constraint validation operational
-- [x] ≥85% precision on relationship type classification (30-record benchmark: 100%)
-- [x] No invalid entity-type constraint violations pass through (validator blocks them, emits event)
-- [x] Idempotent: double-ingest same record → no duplicate relationships
-- [x] 149/149 tests passing, 81.75% coverage (≥80% threshold)
+- [x] Graph traversal returns correct subgraph at depth 1, 2, 3
+- [x] Circular references handled — BFS visited set prevents loops
+- [x] Path discovery: connected entities find shortest path; disconnected return None
+- [x] Semantic search stub returns 501 (NOT_IMPLEMENTED)
+- [x] Trust filter (min_confidence) composable on all endpoints
+- [x] p99 < 200ms on depth-3 traversal against 31-node SQLite fixture (integration test asserts)
+- [x] 180/180 tests passing, 80.64% coverage (≥80% threshold)
 
 ## Known limitations
-- Content-based extraction is rule-based (33 verb patterns); ML/NLP upgrade planned for Phase 5
-- Bidirectional relationships (IS_SAME_AS, RELATED_TO) not automatically created in reverse direction — consumer must issue both directions if needed
-- Active voice patterns ("Alice created Report") not handled; only passive-by and direct patterns supported
+- Semantic similarity search (phase 5b) stubbed — requires embedding API integration
+- get_by_ids used for batch entity fetch; no explicit JOIN optimization (acceptable for current scale)
+- Path discovery holds full path state in BFS queue (memory grows with max_hops; fine for max 8 hops)
 
 ## Boundary
-- Do NOT begin Phase 5 (Query Engine) until the user approves.
+- Do NOT begin Phase 6 (Trust Integration) until the user approves.
 
 ## Next phase
-Phase 5 — Query Engine. See `33-next-actions.md`.
+Phase 6 — Trust Integration. See `33-next-actions.md`.

@@ -28,13 +28,7 @@
 - [x] `src/api/routers/entities.py` — CRUD + soft-delete + search + version history endpoints.
 - [x] `src/api/routers/relationships.py` — CRUD + outbound/inbound traversal endpoints.
 - [x] `src/api/routers/evidence.py` — create + idempotency check + trust recompute trigger.
-- [x] `tests/unit/test_trust_score.py` — 9 formula tests (100% branch coverage).
-- [x] `tests/unit/test_domain_models.py` — invariant tests for all 4 core models.
-- [x] `tests/unit/test_version_service.py` — 4 versioning logic tests with mocks.
-- [x] `tests/integration/conftest.py` — SQLite in-memory fixture for all adapters.
-- [x] `tests/integration/test_entity_repository.py` — 10 CRUD + search integration tests.
-- [x] `tests/integration/test_relationship_repository.py` — 6 traversal + cascade tests.
-- [x] `tests/integration/test_evidence_repository.py` — 5 idempotency + query tests.
+- [x] Unit + integration tests (45 tests, Phase 2 scope).
 
 ### Phase 3 — Entity Engine
 - [x] `src/ingestion/models.py` — MemoryRecord, CandidateEntity, domain events.
@@ -44,25 +38,23 @@
 - [x] `src/ingestion/conflict_detector.py` — ConflictDetector, DISPUTED flagging, version bump.
 - [x] `src/ingestion/entity_pipeline.py` — full 9-step pipeline orchestration.
 - [x] `src/api/routers/ingestion.py` — POST /v1/ingest/memory-record.
-- [x] `tests/unit/test_normalizer.py` — 21 tests.
-- [x] `tests/unit/test_deduplicator.py` — 8 tests.
-- [x] `tests/unit/test_conflict_detector.py` — 7 tests.
-- [x] `tests/integration/test_entity_pipeline.py` — 14 tests (50-record benchmark ≥90% precision ✓).
 - [x] 97/97 tests pass, 80.14% coverage.
 
 ### Phase 4 — Relationship Engine
 - [x] `src/ingestion/relationship_extractor.py` — 33-rule pattern extractor; metadata-driven + heuristics.
 - [x] `src/ingestion/relationship_validator.py` — Entity-type constraint table (8 constrained types + IS_SAME_AS).
 - [x] `src/ingestion/relationship_pipeline.py` — Idempotent relationship persistence with Evidence + TrustScore.
-- [x] `src/ingestion/models.py` — Added ResolvedEntityRef, CandidateRelationship, 2 domain events, extended IngestionResult.
-- [x] `src/ingestion/entity_pipeline.py` — Wired relationship pipeline (optional) after entity resolution.
-- [x] `src/repositories/relationship_repository.py` — Added `exists_by_entities()` abstract method.
-- [x] `src/adapters/postgres/relationship_adapter.py` — Implemented `exists_by_entities()`.
-- [x] `src/api/routers/ingestion.py` — Wired full pipeline (entity + relationship) in DI factory.
-- [x] `tests/unit/test_relationship_extractor.py` — 15 tests + 30-record precision benchmark.
-- [x] `tests/unit/test_relationship_validator.py` — 24 tests.
-- [x] `tests/integration/test_relationship_pipeline.py` — 14 tests.
+- [x] Extended entity pipeline, repository, adapter, API wiring.
 - [x] 149/149 tests pass, 81.75% coverage.
 
+### Phase 5 — Query Engine
+- [x] `src/services/graph_traversal_service.py` — BFS depth-N, direction filter, cycle-safe, batch entity fetch.
+- [x] `src/services/path_discovery_service.py` — BFS shortest path, pessimistic trust propagation.
+- [x] `src/api/routers/query.py` — GET /{id}/graph, GET /{id}/neighbors, GET /{id}/path/{to}, semantic-search stub.
+- [x] `tests/unit/test_graph_traversal.py` — 10 unit tests.
+- [x] `tests/unit/test_path_discovery.py` — 8 unit tests.
+- [x] `tests/integration/test_query_engine.py` — 13 integration tests + performance benchmark.
+- [x] 180/180 tests pass, 80.64% coverage.
+
 ## Pending (blocked on approval)
-- [ ] Phase 5 — Query Engine (traversal, semantic search, pgvector embeddings).
+- [ ] Phase 6 — Trust Integration (propagation, conflict resolution, /explain endpoint).
