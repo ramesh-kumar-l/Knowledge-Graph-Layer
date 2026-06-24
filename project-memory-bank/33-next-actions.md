@@ -1,43 +1,27 @@
 # 33 — Next Actions
 
-Phase 6 is complete. Awaiting approval for Phase 7.
+Phase 7 is complete. Awaiting approval for Phase 8.
 
-## On approval: begin Phase 7 — Visualization
+## On approval: begin Phase 8 — Public Platform
 
-Phase 7 adds the Knowledge Explorer UI — a browser-based interface for exploring
-entities, traversing the graph, inspecting trust scores, and resolving conflicts.
+Phase 8 exposes the Knowledge Graph Layer as a production-grade public API with
+an OpenAPI spec, a typed SDK, and developer documentation.
 
-### Phase 7 deliverables
+### Phase 8 deliverables
 
-1. **Technology stack** — React + TypeScript + Vite + Tailwind CSS (Linear/Stripe aesthetic)
-2. **Graph view** — interactive node/edge canvas (react-flow or d3-force); color-coded by entity type; edge labels with relationship type + confidence
-3. **Entity inspector** — side panel: trust score breakdown, evidence list, provenance, conflict history; links to conflict resolution actions
-4. **Timeline view** — version history visualized per entity (audit trail)
-5. **Trust filter bar** — global min_confidence slider; filter by verification state; rel_type facets
-6. **Conflict resolution UI** — list of DISPUTED entities; Accept / Reject buttons wired to the Phase 6 conflict resolution API
+1. **OpenAPI spec** — auto-generated via FastAPI + manually enriched with examples, descriptions, and error schemas; exported as `docs/openapi.json`
+2. **Typed Python SDK** — `sdk/` directory: `KnowledgeGraphClient` class wrapping all endpoints; `pip install -e .` installable; full type hints
+3. **API key auth** — `X-Api-Key` header middleware; keys stored in config/env; 401 on invalid key
+4. **Rate limiting** — in-process sliding window (100 req/min per key); 429 response on exceed
+5. **Developer docs** — `docs/api-guide.md`: authentication, rate limits, quickstart examples, endpoint reference
+6. **Sample integration** — `examples/ingest_and_query.py`: end-to-end demo (ingest records → query graph → explain entity)
 
-### Phase 7 file structure
-```
-ui/
-  src/
-    components/
-      GraphCanvas.tsx        (< 200 lines)
-      EntityInspector.tsx    (< 200 lines)
-      TrustBreakdown.tsx     (< 150 lines)
-      ConflictQueue.tsx      (< 150 lines)
-    pages/
-      KnowledgeExplorer.tsx  (< 100 lines)
-    api/
-      client.ts              (< 100 lines — typed fetch wrappers)
-  vite.config.ts
-  package.json
-```
-
-### Phase 7 exit criteria
-- Knowledge Explorer loads in browser; graph renders connected entities from real API
-- Entity inspector shows trust score, evidence, provenance for any selected node
-- Trust filter slider filters visible nodes by confidence threshold
-- DISPUTED entities surfaced; Accept/Reject resolves via Phase 6 API
-- Linear/Stripe-quality visual bar (premium, minimal, accessible)
+### Phase 8 exit criteria
+- `GET /v1/openapi.json` returns full OpenAPI 3.1 spec
+- SDK `KnowledgeGraphClient` covers all v1 endpoints; passes `mypy --strict`
+- Invalid API key returns 401; missing key returns 401
+- 101st request within 60s returns 429
+- Developer guide readable in browser (Markdown render)
+- Sample integration runs against a live server end-to-end
 
 _Do not proceed without explicit user approval (phase-execution model)._

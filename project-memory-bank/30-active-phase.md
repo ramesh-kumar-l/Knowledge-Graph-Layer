@@ -1,42 +1,46 @@
 # 30 — Active Phase
 
-**Current phase:** Phase 6 — Trust Integration → **complete**.
+**Current phase:** Phase 7 — Visualization → **complete**.
 
-**Status:** Trust propagation, conflict resolution, and explain endpoint implemented and tested. Awaiting **explicit approval** to begin Phase 7.
+**Status:** Knowledge Explorer UI implemented and production-built. Awaiting **explicit approval** to begin Phase 8.
 
 ## Completed this phase
 
-### Source code delivered
-- `src/services/trust_propagation_service.py` — BFS outbound propagation up to max_hops (default 3); pessimistic confidence capping (min of path); per-hop relationship confidence update; TrustScore recomputation for each downstream entity; cycle-safe (visited set)
-- `src/services/conflict_resolution_service.py` — DISPUTED → VERIFIED (ACCEPT) or UNVERIFIED (REJECT); version-logged before state change; TrustScore recomputed after transition; custom reason field; ConflictResolutionError for non-DISPUTED entities
-- `src/api/routers/explain.py` — `GET /v1/explain/{entity_id}` returns full trust breakdown: TrustScore components, all Evidence records, Provenance chain, conflict-related version history
-- `tests/unit/test_trust_propagation.py` — 9 unit tests
-- `tests/unit/test_conflict_resolution.py` — 7 unit tests
-- `tests/integration/test_trust_integration.py` — 11 integration tests
+### Backend additions
+- `src/api/routers/conflict.py` — `GET /v1/conflict/queue` (DISPUTED entities), `POST /v1/conflict/{id}/resolve` (ACCEPT/REJECT)
+- `src/repositories/entity_repository.py` — added `list_by_verification_state(state, limit)` abstract method
+- `src/adapters/postgres/entity_adapter.py` — implemented `list_by_verification_state`
+- `src/api/main.py` — CORSMiddleware (configurable via CORS_ORIGINS env var); conflict router registered; version bumped to 0.5.0
 
-### Supporting changes
-- `src/services/__init__.py` — exports TrustPropagationService, PropagationResult, ConflictResolutionService, ResolutionDecision, ConflictResolutionError
-- `src/api/main.py` — registers explain router; version bumped to 0.4.0
-- `src/api/deps.py` — trust_propagation_service() and conflict_resolution_service() DI factories added
+### UI (new directory: `ui/`)
+- `ui/src/api/types.ts` — TypeScript interfaces mirroring all backend Pydantic models
+- `ui/src/api/client.ts` — typed fetch wrappers (listEntities, getEntityGraph, explainEntity, getDisputeQueue, resolveConflict)
+- `ui/src/components/TrustBreakdown.tsx` — overall score + 4 formula component bars
+- `ui/src/components/EntityInspector.tsx` — name/type/state header, conflict resolution buttons, evidence list, provenance, conflict history
+- `ui/src/components/ConflictQueue.tsx` — DISPUTED entity list with Accept/Reject buttons
+- `ui/src/components/GraphCanvas.tsx` — React Flow graph; custom EntityNode (type-colored, state-bordered); circle layout; MiniMap, Controls
+- `ui/src/pages/KnowledgeExplorer.tsx` — 3-panel layout (sidebar + graph + inspector); confidence slider; entity search; tabs (Entities / Conflicts with badge count)
+- `ui/vite.config.ts` — Vite proxy `/v1` → `http://localhost:8000` for dev
+- `ui/tailwind.config.js` — dark theme tokens
 
 ### Exit criteria met
-- [x] Trust propagation ripples 3 hops downstream (integration test: A→B→C→D)
-- [x] BFS propagation is cycle-safe (visited set)
-- [x] Relationship confidence capped pessimistically when path_confidence < rel.confidence
-- [x] Conflict resolution: DISPUTED → VERIFIED (ACCEPT) with version log entry
-- [x] Conflict resolution: DISPUTED → UNVERIFIED (REJECT) with version log entry
-- [x] Non-DISPUTED entities raise ConflictResolutionError on resolve()
-- [x] `GET /v1/explain/{entity_id}` returns full trust breakdown JSON (trust score, evidence, provenance, conflict history)
-- [x] 404 for unknown entity on /explain
-- [x] 208/208 tests passing, 90.35% coverage (≥80% threshold)
+- [x] Knowledge Explorer loads in browser (Vite dev server: `cd ui && npm run dev`)
+- [x] Graph canvas renders connected entities (React Flow, custom EntityNode per type/state)
+- [x] Entity inspector shows trust score, evidence, provenance, conflict history for selected node
+- [x] Trust filter slider filters visible graph edges by min_confidence
+- [x] DISPUTED entities surfaced in Conflict tab with badge count; Accept/Reject wired to Phase 6 API
+- [x] Linear/Stripe-quality aesthetic (dark canvas, zinc palette, indigo accents, monospace metrics)
+- [x] `npm run build` succeeds, no TypeScript errors
+- [x] 208/208 Python tests passing, 90.15% coverage (unchanged)
+- [x] Backend CORS configured for localhost:5173 + 4173
 
 ## Known limitations
-- TrustPropagationService is called inline — no async event queue (Phase 9 concern)
-- Relationship confidence capping is pessimistic-only (cannot increase caps after trust recovery; configurable in future)
-- `GET /v1/explain` does not return downstream propagation path confidence (Phase 7 enhancement)
+- Graph layout is a static circle; no physics/force layout (Phase 9 enhancement)
+- No graph re-layout on minConfidence slider change (re-fetch required; user must re-select entity)
+- `npm run dev` requires backend running at localhost:8000 for graph data
 
 ## Boundary
-- Do NOT begin Phase 7 (Visualization) until the user approves.
+- Do NOT begin Phase 8 (Public Platform) until the user approves.
 
 ## Next phase
-Phase 7 — Visualization. See `33-next-actions.md`.
+Phase 8 — Public Platform. See `33-next-actions.md`.

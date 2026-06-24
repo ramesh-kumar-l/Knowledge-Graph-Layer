@@ -1,51 +1,88 @@
 # 90 — Session Handoff
 
 **Session date:** 2026-06-24
-**Phases completed:** Phase 0, Phase 1, Phase 2, Phase 3, Phase 4, Phase 5, Phase 6
+**Phases completed:** Phase 0 through Phase 7
 
 ---
 
-## Phase 6 Summary — Trust Integration
+## Phase 7 Summary — Visualization (Knowledge Explorer UI)
 
-### What was built
+### Backend additions
 
-**Trust propagation service (`src/services/trust_propagation_service.py`):**
-- BFS outbound from a changed entity up to max_hops (default 3)
-- Pessimistic confidence capping: path_confidence = min(source.conf, rel.conf, neighbor.conf)
-- Each hop: if rel.confidence > path_confidence → update_confidence() called
-- Each unvisited downstream entity: TrustScore recomputed via TrustScoreService
-- Cycle-safe (visited set prevents re-processing nodes)
-- Returns PropagationResult(updated_entity_ids, updated_rel_ids, hops_reached)
+**Conflict API router (`src/api/routers/conflict.py`):**
+- `GET /v1/conflict/queue` — returns all active DISPUTED entities via `list_by_verification_state`
+- `POST /v1/conflict/{entity_id}/resolve` — `ResolveRequest(decision, resolved_by, reason)` → delegates to ConflictResolutionService; 422 on non-DISPUTED entity
 
-**Conflict resolution service (`src/services/conflict_resolution_service.py`):**
-- `resolve(entity_id, decision, resolved_by, reason)` — only works on DISPUTED entities
-- ResolutionDecision.ACCEPT → VerificationState.VERIFIED
-- ResolutionDecision.REJECT → VerificationState.UNVERIFIED
-- Version log written BEFORE state change (DEC-0006 ordering requirement)
-- TrustScore recomputed after state change (verification bonus changes the formula)
-- ConflictResolutionError raised for non-DISPUTED or not-found entities
+**Entity repository extension:**
+- `EntityRepository.list_by_verification_state(state, limit)` — abstract method added
+- `PostgresEntityAdapter.list_by_verification_state` — filters by `verification_state` column + `is_active=True`
 
-**Explain endpoint (`src/api/routers/explain.py`):**
-- `GET /v1/explain/{entity_id}` — 404 if unknown
-- Returns: entity metadata, verification state, is_disputed flag
-- TrustScore with all 4 components (evidenceWeight, freshnessDecay, verificationBonus, conflictPenalty)
-- All Evidence records (content preview, source type, confidence, verification state)
-- Provenance chain (origin, extraction_method, agent_id, timestamp)
-- Conflict history — version records filtered to `change_reason` containing "conflict"
+**CORS + version:**
+- `CORSMiddleware` added to FastAPI app; allows `CORS_ORIGINS` env var (default: localhost:5173, 4173)
+- API version bumped: 0.4.0 → 0.5.0
+
+### UI (`ui/`)
+
+**Stack:** React 18 + TypeScript (strict) + Vite 6 + Tailwind CSS 3 + @xyflow/react 12
+
+**Files created:**
+```
+ui/
+  index.html
+  package.json          (type: module; react, @xyflow/react, tailwindcss)
+  vite.config.ts        (proxy /v1 → http://localhost:8000)
+  tailwind.config.js    (dark canvas/surface/border tokens)
+  postcss.config.js
+  tsconfig.json / tsconfig.app.json / tsconfig.node.json
+  src/
+    main.tsx            (ReactDOM createRoot)
+    App.tsx             (KnowledgeExplorer wrapper)
+    index.css           (Tailwind imports + React Flow overrides)
+    api/
+      types.ts          (all TypeScript types mirroring Pydantic models)
+      client.ts         (typed fetch wrappers; BASE = /v1 via Vite proxy)
+    components/
+      TrustBreakdown.tsx     (score + 4 formula bars)
+      EntityInspector.tsx    (entity header, resolve buttons, evidence, provenance)
+      ConflictQueue.tsx      (DISPUTED list with Accept/Reject)
+      GraphCanvas.tsx        (React Flow; EntityNode per type-color/state-border; circle layout)
+    pages/
+      KnowledgeExplorer.tsx  (3-panel: sidebar+graph+inspector; confidence slider; search; tabs)
+```
+
+**Layout:**
+- Header: app name, version, global min_confidence slider
+- Left sidebar (288px): Entities tab (search + list) / Conflicts tab (badge count + queue)
+- Center: React Flow graph canvas (color by entity type, border by verification state)
+- Right inspector (320px): EntityInspector + TrustBreakdown + evidence + provenance
+
+### Test results
+- **208/208 Python tests passing, 90.15% coverage** (no regression)
+- **TypeScript strict compile:** 0 errors
+- **Vite production build:** succeeds (343KB JS + 28KB CSS gzipped to 110KB + 5.6KB)
 
 ---
 
-## Test results
-- 208/208 tests passing (180 from Phases 0–5 + 28 new)
-- 90.35% coverage (≥80% threshold ✓)
+## Dev server startup
+
+```bash
+# Terminal 1 — backend
+cd E:\ClaudeProjects\Knowledge-Graph-Layer
+uvicorn src.api.main:app --reload --port 8000
+
+# Terminal 2 — UI
+cd E:\ClaudeProjects\Knowledge-Graph-Layer\ui
+npm run dev
+# Opens at http://localhost:5173
+```
 
 ---
 
-## Known limitations / next-session notes
-- TrustPropagationService called synchronously inline — no event queue (Phase 9 concern)
-- Relationship confidence capping is one-way (pessimistic only; no recovery path when trust improves)
-- `/explain` does not expose downstream propagation chain confidence (future enhancement)
-- No API endpoints for triggering propagation directly (called internally by ingestion pipeline)
+## Known limitations / Phase 8 notes
+- Graph layout is static circle — no physics/force-directed layout
+- Confidence slider change requires re-selecting entity to re-fetch graph (no live filter on edges in-client)
+- No authentication on API (Phase 8)
+- Rate limiting not implemented (Phase 8)
 
 ## STOP
-Phase 6 complete. Awaiting explicit user approval before Phase 7 (Visualization).
+Phase 7 complete. Awaiting explicit user approval before Phase 8 (Public Platform).

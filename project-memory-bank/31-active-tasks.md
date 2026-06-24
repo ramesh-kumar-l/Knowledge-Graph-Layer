@@ -65,5 +65,20 @@
 - [x] `tests/integration/test_trust_integration.py` — 11 integration tests.
 - [x] 208/208 tests pass, 90.35% coverage.
 
+### Phase 7 — Visualization
+- [x] Backend: `GET /v1/conflict/queue` + `POST /v1/conflict/{id}/resolve` endpoints.
+- [x] Backend: `list_by_verification_state` added to EntityRepository + PostgresEntityAdapter.
+- [x] Backend: CORSMiddleware added; version bumped to 0.5.0.
+- [x] UI: `ui/src/api/types.ts` — all TypeScript types mirroring backend models.
+- [x] UI: `ui/src/api/client.ts` — typed fetch API client with Vite proxy.
+- [x] UI: `TrustBreakdown.tsx` — score + 4 component bars.
+- [x] UI: `EntityInspector.tsx` — entity header, resolution buttons, evidence, provenance, conflict history.
+- [x] UI: `ConflictQueue.tsx` — DISPUTED list with Accept/Reject.
+- [x] UI: `GraphCanvas.tsx` — React Flow graph, custom entity nodes, MiniMap, Controls.
+- [x] UI: `KnowledgeExplorer.tsx` — 3-panel layout, search, tabs, confidence slider.
+- [x] `npm run build` passes. TypeScript strict compile passes.
+- [x] 208/208 Python tests pass, 90.15% coverage.
+
 ## Pending (blocked on approval)
-- [ ] Phase 7 — Visualization (Knowledge Explorer UI — graph view, timeline, trust inspector).
+- [ ] Phase 8 — Public Platform (REST API spec, typed SDK, rate limiting, auth, developer docs).
+- [ ] Phase 9 — Production Hardening (throughput, caching, tracing, runbook).

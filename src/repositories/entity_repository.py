@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from src.domain import Entity, CreateEntityCommand, UpdateEntityCommand, EntityType
+from src.domain import Entity, CreateEntityCommand, UpdateEntityCommand, EntityType, VerificationState
 
 
 class EntityRepository(ABC):
@@ -55,3 +55,9 @@ class EntityRepository(ABC):
     @abstractmethod
     async def count_active(self) -> int:
         """Total count of active entities."""
+
+    @abstractmethod
+    async def list_by_verification_state(
+        self, state: VerificationState, limit: int = 200
+    ) -> list[Entity]:
+        """Return active entities with the given verification_state."""

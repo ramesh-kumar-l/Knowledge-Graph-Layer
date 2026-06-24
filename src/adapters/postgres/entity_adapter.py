@@ -147,6 +147,16 @@ class PostgresEntityAdapter(EntityRepository):
         )
         return result.scalar_one()
 
+    async def list_by_verification_state(
+        self, state: VerificationState, limit: int = 200
+    ) -> list[Entity]:
+        result = await self._session.execute(
+            select(EntityORM)
+            .where(EntityORM.is_active.is_(True), EntityORM.verification_state == state.value)
+            .limit(limit)
+        )
+        return [_orm_to_domain(r) for r in result.scalars()]
+
     async def update_confidence(self, entity_id: UUID, confidence: float) -> None:
         result = await self._session.execute(
             select(EntityORM).where(EntityORM.id == entity_id)
