@@ -1,43 +1,42 @@
 # 30 — Active Phase
 
-**Current phase:** Phase 5 — Query Engine → **complete**.
+**Current phase:** Phase 6 — Trust Integration → **complete**.
 
-**Status:** Full graph traversal + path discovery engine implemented and tested. Awaiting **explicit approval** to begin Phase 6.
+**Status:** Trust propagation, conflict resolution, and explain endpoint implemented and tested. Awaiting **explicit approval** to begin Phase 7.
 
 ## Completed this phase
 
 ### Source code delivered
-- `src/services/graph_traversal_service.py` — BFS depth-N traversal; OUTBOUND/INBOUND/BOTH direction filter; rel_type + min_confidence filters; cycle-safe (visited set); batch-fetches frontier entities per BFS level for performance
-- `src/services/path_discovery_service.py` — BFS shortest path between two entities; pessimistic trust propagation (min of all confidences); max_hops cap; confidence + rel_type filter
-- `src/api/routers/query.py` — 4 live endpoints + semantic-search stub (501):
-  - `GET /v1/entities/{id}/graph` — subgraph up to depth N
-  - `GET /v1/entities/{id}/neighbors` — direct relationships (depth=1)
-  - `GET /v1/entities/{id}/path/{to_id}` — shortest path
-  - `GET /v1/entities/semantic-search` — 501 stub (Phase 5b)
-- `tests/unit/test_graph_traversal.py` — 10 unit tests
-- `tests/unit/test_path_discovery.py` — 8 unit tests
-- `tests/integration/test_query_engine.py` — 13 integration tests incl. performance benchmark
+- `src/services/trust_propagation_service.py` — BFS outbound propagation up to max_hops (default 3); pessimistic confidence capping (min of path); per-hop relationship confidence update; TrustScore recomputation for each downstream entity; cycle-safe (visited set)
+- `src/services/conflict_resolution_service.py` — DISPUTED → VERIFIED (ACCEPT) or UNVERIFIED (REJECT); version-logged before state change; TrustScore recomputed after transition; custom reason field; ConflictResolutionError for non-DISPUTED entities
+- `src/api/routers/explain.py` — `GET /v1/explain/{entity_id}` returns full trust breakdown: TrustScore components, all Evidence records, Provenance chain, conflict-related version history
+- `tests/unit/test_trust_propagation.py` — 9 unit tests
+- `tests/unit/test_conflict_resolution.py` — 7 unit tests
+- `tests/integration/test_trust_integration.py` — 11 integration tests
 
 ### Supporting changes
-- `src/services/__init__.py` — exports GraphTraversalService, GraphResult, PathDiscoveryService, DiscoveredPath
-- `src/api/main.py` — registers query router; version bumped to 0.3.0
+- `src/services/__init__.py` — exports TrustPropagationService, PropagationResult, ConflictResolutionService, ResolutionDecision, ConflictResolutionError
+- `src/api/main.py` — registers explain router; version bumped to 0.4.0
+- `src/api/deps.py` — trust_propagation_service() and conflict_resolution_service() DI factories added
 
 ### Exit criteria met
-- [x] Graph traversal returns correct subgraph at depth 1, 2, 3
-- [x] Circular references handled — BFS visited set prevents loops
-- [x] Path discovery: connected entities find shortest path; disconnected return None
-- [x] Semantic search stub returns 501 (NOT_IMPLEMENTED)
-- [x] Trust filter (min_confidence) composable on all endpoints
-- [x] p99 < 200ms on depth-3 traversal against 31-node SQLite fixture (integration test asserts)
-- [x] 180/180 tests passing, 80.64% coverage (≥80% threshold)
+- [x] Trust propagation ripples 3 hops downstream (integration test: A→B→C→D)
+- [x] BFS propagation is cycle-safe (visited set)
+- [x] Relationship confidence capped pessimistically when path_confidence < rel.confidence
+- [x] Conflict resolution: DISPUTED → VERIFIED (ACCEPT) with version log entry
+- [x] Conflict resolution: DISPUTED → UNVERIFIED (REJECT) with version log entry
+- [x] Non-DISPUTED entities raise ConflictResolutionError on resolve()
+- [x] `GET /v1/explain/{entity_id}` returns full trust breakdown JSON (trust score, evidence, provenance, conflict history)
+- [x] 404 for unknown entity on /explain
+- [x] 208/208 tests passing, 90.35% coverage (≥80% threshold)
 
 ## Known limitations
-- Semantic similarity search (phase 5b) stubbed — requires embedding API integration
-- get_by_ids used for batch entity fetch; no explicit JOIN optimization (acceptable for current scale)
-- Path discovery holds full path state in BFS queue (memory grows with max_hops; fine for max 8 hops)
+- TrustPropagationService is called inline — no async event queue (Phase 9 concern)
+- Relationship confidence capping is pessimistic-only (cannot increase caps after trust recovery; configurable in future)
+- `GET /v1/explain` does not return downstream propagation path confidence (Phase 7 enhancement)
 
 ## Boundary
-- Do NOT begin Phase 6 (Trust Integration) until the user approves.
+- Do NOT begin Phase 7 (Visualization) until the user approves.
 
 ## Next phase
-Phase 6 — Trust Integration. See `33-next-actions.md`.
+Phase 7 — Visualization. See `33-next-actions.md`.

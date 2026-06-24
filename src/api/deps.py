@@ -17,6 +17,8 @@ from src.repositories import (
     TrustScoreRepository, VersionRepository,
 )
 from src.services import TrustScoreService, VersionService
+from src.services.trust_propagation_service import TrustPropagationService
+from src.services.conflict_resolution_service import ConflictResolutionService
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
@@ -56,3 +58,21 @@ def version_service(
     v_repo: Annotated[VersionRepository, Depends(version_repo)],
 ) -> VersionService:
     return VersionService(v_repo)
+
+
+def trust_propagation_service(
+    e_repo: Annotated[EntityRepository, Depends(entity_repo)],
+    r_repo: Annotated[RelationshipRepository, Depends(relationship_repo)],
+    ts_repo: Annotated[TrustScoreRepository, Depends(trust_score_repo)],
+    ts_svc: Annotated[TrustScoreService, Depends(trust_score_service)],
+) -> TrustPropagationService:
+    return TrustPropagationService(e_repo, r_repo, ts_repo, ts_svc)
+
+
+def conflict_resolution_service(
+    e_repo: Annotated[EntityRepository, Depends(entity_repo)],
+    ev_repo: Annotated[EvidenceRepository, Depends(evidence_repo)],
+    v_svc: Annotated[VersionService, Depends(version_service)],
+    ts_svc: Annotated[TrustScoreService, Depends(trust_score_service)],
+) -> ConflictResolutionService:
+    return ConflictResolutionService(e_repo, ev_repo, v_svc, ts_svc)

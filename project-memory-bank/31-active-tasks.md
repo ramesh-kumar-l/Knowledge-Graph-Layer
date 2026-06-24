@@ -56,5 +56,14 @@
 - [x] `tests/integration/test_query_engine.py` — 13 integration tests + performance benchmark.
 - [x] 180/180 tests pass, 80.64% coverage.
 
+### Phase 6 — Trust Integration
+- [x] `src/services/trust_propagation_service.py` — BFS outbound propagation; pessimistic confidence capping; TrustScore recompute per downstream node.
+- [x] `src/services/conflict_resolution_service.py` — DISPUTED → VERIFIED/UNVERIFIED; version-logged; TrustScore recomputed.
+- [x] `src/api/routers/explain.py` — GET /v1/explain/{entity_id} with full trust breakdown.
+- [x] `tests/unit/test_trust_propagation.py` — 9 unit tests.
+- [x] `tests/unit/test_conflict_resolution.py` — 7 unit tests.
+- [x] `tests/integration/test_trust_integration.py` — 11 integration tests.
+- [x] 208/208 tests pass, 90.35% coverage.
+
 ## Pending (blocked on approval)
-- [ ] Phase 6 — Trust Integration (propagation, conflict resolution, /explain endpoint).
+- [ ] Phase 7 — Visualization (Knowledge Explorer UI — graph view, timeline, trust inspector).
