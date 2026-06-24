@@ -1,0 +1,2467 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SCP Knowledge Graph Layer",
+    "description": "Semantic understanding layer \u2014 transforms SCP Memory Core memories into structured, trustworthy, versioned knowledge.\n\n**Auth:** Pass your API key in the `X-Api-Key` header. Keys are configured via the `API_KEYS` environment variable. Omit the variable to disable auth in development.\n\n**Rate limit:** 100 requests per 60 seconds per API key.",
+    "version": "0.6.0"
+  },
+  "paths": {
+    "/v1/entities/": {
+      "post": {
+        "tags": [
+          "entities"
+        ],
+        "summary": "Create Entity",
+        "operationId": "create_entity_v1_entities__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEntityCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Entity"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "entities"
+        ],
+        "summary": "List Entities",
+        "operationId": "list_entities_v1_entities__get",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Entity"
+                  },
+                  "title": "Response List Entities V1 Entities  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entities/{entity_id}": {
+      "get": {
+        "tags": [
+          "entities"
+        ],
+        "summary": "Get Entity",
+        "operationId": "get_entity_v1_entities__entity_id__get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Entity"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "entities"
+        ],
+        "summary": "Update Entity",
+        "operationId": "update_entity_v1_entities__entity_id__patch",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEntityCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Entity"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "entities"
+        ],
+        "summary": "Soft Delete Entity",
+        "operationId": "soft_delete_entity_v1_entities__entity_id__delete",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "changed_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "system",
+              "title": "Changed By"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entities/search/": {
+      "get": {
+        "tags": [
+          "entities"
+        ],
+        "summary": "Search Entities",
+        "operationId": "search_entities_v1_entities_search__get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Q"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EntityType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "name": "min_confidence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "default": 0.5,
+              "title": "Min Confidence"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Entity"
+                  },
+                  "title": "Response Search Entities V1 Entities Search  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entities/{entity_id}/versions": {
+      "get": {
+        "tags": [
+          "entities"
+        ],
+        "summary": "Get Entity Versions",
+        "operationId": "get_entity_versions_v1_entities__entity_id__versions_get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/relationships/": {
+      "post": {
+        "tags": [
+          "relationships"
+        ],
+        "summary": "Create Relationship",
+        "operationId": "create_relationship_v1_relationships__post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRelationshipCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Relationship"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "relationships"
+        ],
+        "summary": "List Relationships",
+        "operationId": "list_relationships_v1_relationships__get",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Relationship"
+                  },
+                  "title": "Response List Relationships V1 Relationships  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/relationships/{rel_id}": {
+      "get": {
+        "tags": [
+          "relationships"
+        ],
+        "summary": "Get Relationship",
+        "operationId": "get_relationship_v1_relationships__rel_id__get",
+        "parameters": [
+          {
+            "name": "rel_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rel Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Relationship"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "relationships"
+        ],
+        "summary": "Soft Delete Relationship",
+        "operationId": "soft_delete_relationship_v1_relationships__rel_id__delete",
+        "parameters": [
+          {
+            "name": "rel_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Rel Id"
+            }
+          },
+          {
+            "name": "changed_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "system",
+              "title": "Changed By"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/relationships/outbound/{entity_id}": {
+      "get": {
+        "tags": [
+          "relationships"
+        ],
+        "summary": "Get Outbound",
+        "operationId": "get_outbound_v1_relationships_outbound__entity_id__get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RelationshipType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Relationship"
+                  },
+                  "title": "Response Get Outbound V1 Relationships Outbound  Entity Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/relationships/inbound/{entity_id}": {
+      "get": {
+        "tags": [
+          "relationships"
+        ],
+        "summary": "Get Inbound",
+        "operationId": "get_inbound_v1_relationships_inbound__entity_id__get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RelationshipType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Relationship"
+                  },
+                  "title": "Response Get Inbound V1 Relationships Inbound  Entity Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/evidence/": {
+      "post": {
+        "tags": [
+          "evidence"
+        ],
+        "summary": "Create Evidence",
+        "operationId": "create_evidence_v1_evidence__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEvidenceCommand"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Evidence"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/evidence/{evidence_id}": {
+      "get": {
+        "tags": [
+          "evidence"
+        ],
+        "summary": "Get Evidence",
+        "operationId": "get_evidence_v1_evidence__evidence_id__get",
+        "parameters": [
+          {
+            "name": "evidence_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Evidence Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Evidence"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/evidence/subject/{subject_id}": {
+      "get": {
+        "tags": [
+          "evidence"
+        ],
+        "summary": "Get Evidence For Subject",
+        "operationId": "get_evidence_for_subject_v1_evidence_subject__subject_id__get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "subject_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SubjectType",
+              "default": "ENTITY"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Evidence"
+                  },
+                  "title": "Response Get Evidence For Subject V1 Evidence Subject  Subject Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/evidence/check-idempotency/": {
+      "get": {
+        "tags": [
+          "evidence"
+        ],
+        "summary": "Check Idempotency",
+        "operationId": "check_idempotency_v1_evidence_check_idempotency__get",
+        "parameters": [
+          {
+            "name": "subject_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "source_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Source Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Check Idempotency V1 Evidence Check Idempotency  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ingest/memory-record": {
+      "post": {
+        "tags": [
+          "ingestion"
+        ],
+        "summary": "Ingest Memory Record",
+        "description": "Ingest a single SCP Memory Core record.\n\nIdempotent: re-submitting the same record.id returns status=SKIPPED_DUPLICATE.",
+        "operationId": "ingest_memory_record_v1_ingest_memory_record_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemoryRecord"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entities/semantic-search": {
+      "get": {
+        "tags": [
+          "query"
+        ],
+        "summary": "Semantic Search",
+        "description": "Semantic similarity search \u2014 Phase 5b stub (requires embedding API).",
+        "operationId": "semantic_search_v1_entities_semantic_search_get",
+        "responses": {
+          "501": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Semantic Search V1 Entities Semantic Search Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entities/{entity_id}/graph": {
+      "get": {
+        "tags": [
+          "query"
+        ],
+        "summary": "Get Entity Graph",
+        "operationId": "get_entity_graph_v1_entities__entity_id__graph_get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "max_depth",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 5,
+              "minimum": 1,
+              "default": 3,
+              "title": "Max Depth"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(OUTBOUND|INBOUND|BOTH)$",
+              "default": "BOTH",
+              "title": "Direction"
+            }
+          },
+          {
+            "name": "rel_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RelationshipType"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Rel Type"
+            }
+          },
+          {
+            "name": "min_confidence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "default": 0.0,
+              "title": "Min Confidence"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GraphResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entities/{entity_id}/neighbors": {
+      "get": {
+        "tags": [
+          "query"
+        ],
+        "summary": "Get Entity Neighbors",
+        "operationId": "get_entity_neighbors_v1_entities__entity_id__neighbors_get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(OUTBOUND|INBOUND|BOTH)$",
+              "default": "BOTH",
+              "title": "Direction"
+            }
+          },
+          {
+            "name": "rel_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RelationshipType"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Rel Type"
+            }
+          },
+          {
+            "name": "min_confidence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "default": 0.0,
+              "title": "Min Confidence"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GraphResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/entities/{entity_id}/path/{to_entity_id}": {
+      "get": {
+        "tags": [
+          "query"
+        ],
+        "summary": "Find Path",
+        "operationId": "find_path_v1_entities__entity_id__path__to_entity_id__get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          },
+          {
+            "name": "to_entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "To Entity Id"
+            }
+          },
+          {
+            "name": "max_hops",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 8,
+              "minimum": 1,
+              "default": 4,
+              "title": "Max Hops"
+            }
+          },
+          {
+            "name": "min_confidence",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "maximum": 1.0,
+              "minimum": 0.0,
+              "default": 0.0,
+              "title": "Min Confidence"
+            }
+          },
+          {
+            "name": "rel_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RelationshipType"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Rel Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PathResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/explain/{entity_id}": {
+      "get": {
+        "tags": [
+          "explain"
+        ],
+        "summary": "Explain Entity",
+        "description": "Return full trust breakdown for an entity.",
+        "operationId": "explain_entity_v1_explain__entity_id__get",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplainResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/conflict/queue": {
+      "get": {
+        "tags": [
+          "conflict"
+        ],
+        "summary": "Get Dispute Queue",
+        "description": "Return all active DISPUTED entities.",
+        "operationId": "get_dispute_queue_v1_conflict_queue_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Entity"
+                  },
+                  "type": "array",
+                  "title": "Response Get Dispute Queue V1 Conflict Queue Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/conflict/{entity_id}/resolve": {
+      "post": {
+        "tags": [
+          "conflict"
+        ],
+        "summary": "Resolve Conflict",
+        "description": "Resolve a DISPUTED entity: ACCEPT \u2192 VERIFIED, REJECT \u2192 UNVERIFIED.",
+        "operationId": "resolve_conflict_v1_conflict__entity_id__resolve_post",
+        "parameters": [
+          {
+            "name": "entity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Entity Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Entity"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ConflictEvent": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "change_reason": {
+            "type": "string",
+            "title": "Change Reason"
+          },
+          "changed_by": {
+            "type": "string",
+            "title": "Changed By"
+          },
+          "changed_at": {
+            "type": "string",
+            "title": "Changed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "change_reason",
+          "changed_by",
+          "changed_at"
+        ],
+        "title": "ConflictEvent"
+      },
+      "CreateEntityCommand": {
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/EntityType"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Aliases"
+          },
+          "attributes": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Attributes"
+          },
+          "source_memory_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Memory Ids"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Labels"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By",
+            "default": "system"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "name"
+        ],
+        "title": "CreateEntityCommand"
+      },
+      "CreateEvidenceCommand": {
+        "properties": {
+          "subject_type": {
+            "$ref": "#/components/schemas/SubjectType"
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subject Id"
+          },
+          "source_type": {
+            "$ref": "#/components/schemas/EvidenceSourceType"
+          },
+          "source_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source Id"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 4096,
+            "title": "Content"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "extractor_id": {
+            "type": "string",
+            "title": "Extractor Id"
+          },
+          "verification_state": {
+            "$ref": "#/components/schemas/VerificationState",
+            "default": "UNVERIFIED"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_type",
+          "subject_id",
+          "source_type",
+          "source_id",
+          "content",
+          "confidence",
+          "extractor_id"
+        ],
+        "title": "CreateEvidenceCommand"
+      },
+      "CreateRelationshipCommand": {
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/RelationshipType"
+          },
+          "from_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "From Entity Id"
+          },
+          "to_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "To Entity Id"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/Direction",
+            "default": "DIRECTED"
+          },
+          "attributes": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Attributes"
+          },
+          "strength": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strength"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By",
+            "default": "system"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "from_entity_id",
+          "to_entity_id"
+        ],
+        "title": "CreateRelationshipCommand"
+      },
+      "Direction": {
+        "type": "string",
+        "enum": [
+          "DIRECTED",
+          "BIDIRECTIONAL"
+        ],
+        "title": "Direction"
+      },
+      "Entity": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/EntityType"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Aliases"
+          },
+          "attributes": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Attributes"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "default": 0.0
+          },
+          "verification_state": {
+            "$ref": "#/components/schemas/VerificationState",
+            "default": "UNVERIFIED"
+          },
+          "source_memory_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Memory Ids"
+          },
+          "labels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Labels"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version",
+            "default": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "name"
+        ],
+        "title": "Entity"
+      },
+      "EntityType": {
+        "type": "string",
+        "enum": [
+          "PERSON",
+          "PROJECT",
+          "GOAL",
+          "TASK",
+          "SKILL",
+          "DOCUMENT",
+          "ORGANIZATION",
+          "EVENT",
+          "CONCEPT",
+          "ARTIFACT",
+          "LOCATION",
+          "PRODUCT"
+        ],
+        "title": "EntityType"
+      },
+      "Evidence": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "subject_type": {
+            "$ref": "#/components/schemas/SubjectType"
+          },
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subject Id"
+          },
+          "source_type": {
+            "$ref": "#/components/schemas/EvidenceSourceType"
+          },
+          "source_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source Id"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 4096,
+            "title": "Content"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "extracted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Extracted At"
+          },
+          "extractor_id": {
+            "type": "string",
+            "title": "Extractor Id"
+          },
+          "verification_state": {
+            "$ref": "#/components/schemas/VerificationState",
+            "default": "UNVERIFIED"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_type",
+          "subject_id",
+          "source_type",
+          "source_id",
+          "content",
+          "confidence",
+          "extractor_id"
+        ],
+        "title": "Evidence",
+        "description": "Immutable after creation. Corrections add a new Evidence record."
+      },
+      "EvidenceSourceType": {
+        "type": "string",
+        "enum": [
+          "MEMORY",
+          "DOCUMENT",
+          "INFERENCE",
+          "USER_INPUT",
+          "SYSTEM"
+        ],
+        "title": "EvidenceSourceType"
+      },
+      "ExplainResponse": {
+        "properties": {
+          "entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Entity Id"
+          },
+          "entity_name": {
+            "type": "string",
+            "title": "Entity Name"
+          },
+          "entity_type": {
+            "type": "string",
+            "title": "Entity Type"
+          },
+          "verification_state": {
+            "type": "string",
+            "title": "Verification State"
+          },
+          "is_disputed": {
+            "type": "boolean",
+            "title": "Is Disputed"
+          },
+          "trust_score": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrustScoreResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "provenance": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provenance"
+          },
+          "conflict_history": {
+            "items": {
+              "$ref": "#/components/schemas/ConflictEvent"
+            },
+            "type": "array",
+            "title": "Conflict History"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entity_id",
+          "entity_name",
+          "entity_type",
+          "verification_state",
+          "is_disputed",
+          "trust_score",
+          "evidence",
+          "provenance",
+          "conflict_history"
+        ],
+        "title": "ExplainResponse"
+      },
+      "GraphResponse": {
+        "properties": {
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/Entity"
+            },
+            "type": "array",
+            "title": "Nodes"
+          },
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/Relationship"
+            },
+            "type": "array",
+            "title": "Edges"
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated"
+          },
+          "node_count": {
+            "type": "integer",
+            "title": "Node Count"
+          },
+          "edge_count": {
+            "type": "integer",
+            "title": "Edge Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nodes",
+          "edges",
+          "truncated",
+          "node_count",
+          "edge_count"
+        ],
+        "title": "GraphResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IngestionResult": {
+        "properties": {
+          "memory_record_id": {
+            "type": "string",
+            "title": "Memory Record Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "entities_created": {
+            "type": "integer",
+            "title": "Entities Created",
+            "default": 0
+          },
+          "entities_matched": {
+            "type": "integer",
+            "title": "Entities Matched",
+            "default": 0
+          },
+          "relationships_created": {
+            "type": "integer",
+            "title": "Relationships Created",
+            "default": 0
+          },
+          "relationships_skipped": {
+            "type": "integer",
+            "title": "Relationships Skipped",
+            "default": 0
+          },
+          "events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "memory_record_id",
+          "status"
+        ],
+        "title": "IngestionResult"
+      },
+      "MemoryRecord": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Id"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "agent_id": {
+            "type": "string",
+            "title": "Agent Id",
+            "default": "system"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "content",
+          "timestamp"
+        ],
+        "title": "MemoryRecord",
+        "description": "Input record from SCP Memory Core (11-memory-model.md)."
+      },
+      "PathResponse": {
+        "properties": {
+          "entities": {
+            "items": {
+              "$ref": "#/components/schemas/Entity"
+            },
+            "type": "array",
+            "title": "Entities"
+          },
+          "relationships": {
+            "items": {
+              "$ref": "#/components/schemas/Relationship"
+            },
+            "type": "array",
+            "title": "Relationships"
+          },
+          "hop_count": {
+            "type": "integer",
+            "title": "Hop Count"
+          },
+          "total_confidence": {
+            "type": "number",
+            "title": "Total Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "entities",
+          "relationships",
+          "hop_count",
+          "total_confidence"
+        ],
+        "title": "PathResponse"
+      },
+      "Relationship": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/RelationshipType"
+          },
+          "from_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "From Entity Id"
+          },
+          "to_entity_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "To Entity Id"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/Direction",
+            "default": "DIRECTED"
+          },
+          "attributes": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Attributes"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence",
+            "default": 0.0
+          },
+          "verification_state": {
+            "$ref": "#/components/schemas/VerificationState",
+            "default": "UNVERIFIED"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          },
+          "provenance_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provenance Id"
+          },
+          "strength": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strength"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Version",
+            "default": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "from_entity_id",
+          "to_entity_id"
+        ],
+        "title": "Relationship"
+      },
+      "RelationshipType": {
+        "type": "string",
+        "enum": [
+          "IS_SAME_AS",
+          "IS_ALIAS_OF",
+          "IS_VARIATION_OF",
+          "OWNS",
+          "CREATED_BY",
+          "MAINTAINED_BY",
+          "AUTHORED_BY",
+          "DEPENDS_ON",
+          "REQUIRES",
+          "USES",
+          "INTEGRATES_WITH",
+          "PART_OF",
+          "CONTAINS",
+          "CHILD_OF",
+          "PARENT_OF",
+          "PRECEDED_BY",
+          "FOLLOWED_BY",
+          "CO_OCCURRED_WITH",
+          "SCHEDULED_ON",
+          "WORKS_TOWARD",
+          "CONTRIBUTES_TO",
+          "BLOCKS",
+          "ENABLES",
+          "ASSIGNED_TO",
+          "MEMBER_OF",
+          "REPORTS_TO",
+          "COLLABORATES_ON",
+          "RELATED_TO",
+          "SIMILAR_TO",
+          "CONTRADICTS",
+          "REFERENCES",
+          "DERIVED_FROM"
+        ],
+        "title": "RelationshipType"
+      },
+      "ResolutionDecision": {
+        "type": "string",
+        "enum": [
+          "ACCEPT",
+          "REJECT"
+        ],
+        "title": "ResolutionDecision"
+      },
+      "ResolveRequest": {
+        "properties": {
+          "decision": {
+            "$ref": "#/components/schemas/ResolutionDecision"
+          },
+          "resolved_by": {
+            "type": "string",
+            "title": "Resolved By",
+            "default": "user"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "decision"
+        ],
+        "title": "ResolveRequest"
+      },
+      "SubjectType": {
+        "type": "string",
+        "enum": [
+          "ENTITY",
+          "RELATIONSHIP"
+        ],
+        "title": "SubjectType"
+      },
+      "TrustComponentsResponse": {
+        "properties": {
+          "evidence_weight": {
+            "type": "number",
+            "title": "Evidence Weight"
+          },
+          "freshness_decay": {
+            "type": "number",
+            "title": "Freshness Decay"
+          },
+          "verification_bonus": {
+            "type": "number",
+            "title": "Verification Bonus"
+          },
+          "conflict_penalty": {
+            "type": "number",
+            "title": "Conflict Penalty"
+          },
+          "evidence_count": {
+            "type": "integer",
+            "title": "Evidence Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evidence_weight",
+          "freshness_decay",
+          "verification_bonus",
+          "conflict_penalty",
+          "evidence_count"
+        ],
+        "title": "TrustComponentsResponse"
+      },
+      "TrustScoreResponse": {
+        "properties": {
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "components": {
+            "$ref": "#/components/schemas/TrustComponentsResponse"
+          },
+          "algorithm": {
+            "type": "string",
+            "title": "Algorithm"
+          },
+          "computed_at": {
+            "type": "string",
+            "title": "Computed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "score",
+          "components",
+          "algorithm",
+          "computed_at"
+        ],
+        "title": "TrustScoreResponse"
+      },
+      "UpdateEntityCommand": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "aliases": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aliases"
+          },
+          "attributes": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attributes"
+          },
+          "labels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Labels"
+          },
+          "verification_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VerificationState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "change_reason": {
+            "type": "string",
+            "title": "Change Reason",
+            "default": "update"
+          },
+          "changed_by": {
+            "type": "string",
+            "title": "Changed By",
+            "default": "system"
+          }
+        },
+        "type": "object",
+        "title": "UpdateEntityCommand"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VerificationState": {
+        "type": "string",
+        "enum": [
+          "UNVERIFIED",
+          "INFERRED",
+          "VERIFIED",
+          "DISPUTED"
+        ],
+        "title": "VerificationState"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "entities",
+      "description": "Entity CRUD and version history"
+    },
+    {
+      "name": "relationships",
+      "description": "Relationship CRUD"
+    },
+    {
+      "name": "evidence",
+      "description": "Evidence management"
+    },
+    {
+      "name": "ingestion",
+      "description": "Memory record ingestion pipeline"
+    },
+    {
+      "name": "query",
+      "description": "Graph traversal, neighbors, path discovery"
+    },
+    {
+      "name": "explain",
+      "description": "Trust score breakdown and provenance chain"
+    },
+    {
+      "name": "conflict",
+      "description": "Conflict queue and resolution"
+    },
+    {
+      "name": "system",
+      "description": "Health and spec endpoints"
+    }
+  ]
+}

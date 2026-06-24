@@ -1,0 +1,41 @@
+"""SCP Knowledge Graph Layer — Python SDK."""
+from knowledge_graph.client import KnowledgeGraphClient, KnowledgeGraphError
+from knowledge_graph.models import (
+    CreateEntityCommand,
+    CreateRelationshipCommand,
+    Direction,
+    Entity,
+    EntityType,
+    ExplainResponse,
+    GraphResponse,
+    MemoryRecord,
+    PathResponse,
+    Relationship,
+    RelationshipType,
+    ResolutionDecision,
+    ResolveConflictCommand,
+    TrustScore,
+    UpdateEntityCommand,
+    VerificationState,
+)
+
+__all__ = [
+    "KnowledgeGraphClient",
+    "KnowledgeGraphError",
+    "Entity",
+    "EntityType",
+    "Relationship",
+    "RelationshipType",
+    "VerificationState",
+    "Direction",
+    "TrustScore",
+    "GraphResponse",
+    "PathResponse",
+    "ExplainResponse",
+    "MemoryRecord",
+    "CreateEntityCommand",
+    "UpdateEntityCommand",
+    "CreateRelationshipCommand",
+    "ResolutionDecision",
+    "ResolveConflictCommand",
+]

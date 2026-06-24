@@ -1,46 +1,51 @@
 # 30 — Active Phase
 
-**Current phase:** Phase 7 — Visualization → **complete**.
+**Current phase:** Phase 8 — Public Platform → **complete**.
 
-**Status:** Knowledge Explorer UI implemented and production-built. Awaiting **explicit approval** to begin Phase 8.
+**Status:** Auth, rate limiting, SDK, developer docs, and sample integration all implemented. Awaiting **explicit approval** to begin Phase 9.
 
 ## Completed this phase
 
 ### Backend additions
-- `src/api/routers/conflict.py` — `GET /v1/conflict/queue` (DISPUTED entities), `POST /v1/conflict/{id}/resolve` (ACCEPT/REJECT)
-- `src/repositories/entity_repository.py` — added `list_by_verification_state(state, limit)` abstract method
-- `src/adapters/postgres/entity_adapter.py` — implemented `list_by_verification_state`
-- `src/api/main.py` — CORSMiddleware (configurable via CORS_ORIGINS env var); conflict router registered; version bumped to 0.5.0
+- `src/api/auth.py` — `verify_api_key` dependency; `API_KEYS` env var; dev-mode bypass when unset
+- `src/api/rate_limit.py` — `_SlidingWindow` (100 req/60s per key); `rate_limit_check` dependency (chains auth → limit)
+- `src/api/main.py` — `_v1_deps = [Depends(rate_limit_check)]` applied to all 7 v1 routers; `/v1/openapi.json` alias; version 0.6.0; OpenAPI tags + enriched description
 
-### UI (new directory: `ui/`)
-- `ui/src/api/types.ts` — TypeScript interfaces mirroring all backend Pydantic models
-- `ui/src/api/client.ts` — typed fetch wrappers (listEntities, getEntityGraph, explainEntity, getDisputeQueue, resolveConflict)
-- `ui/src/components/TrustBreakdown.tsx` — overall score + 4 formula component bars
-- `ui/src/components/EntityInspector.tsx` — name/type/state header, conflict resolution buttons, evidence list, provenance, conflict history
-- `ui/src/components/ConflictQueue.tsx` — DISPUTED entity list with Accept/Reject buttons
-- `ui/src/components/GraphCanvas.tsx` — React Flow graph; custom EntityNode (type-colored, state-bordered); circle layout; MiniMap, Controls
-- `ui/src/pages/KnowledgeExplorer.tsx` — 3-panel layout (sidebar + graph + inspector); confidence slider; entity search; tabs (Entities / Conflicts with badge count)
-- `ui/vite.config.ts` — Vite proxy `/v1` → `http://localhost:8000` for dev
-- `ui/tailwind.config.js` — dark theme tokens
+### SDK (`sdk/`)
+- `sdk/pyproject.toml` — `scp-knowledge-graph-sdk 0.6.0`; deps: httpx, pydantic; `pip install -e sdk/`
+- `sdk/knowledge_graph/models.py` — Pydantic models matching all API types (Entity, Relationship, TrustScore, GraphResponse, PathResponse, ExplainResponse, MemoryRecord, commands, enums)
+- `sdk/knowledge_graph/client.py` — `KnowledgeGraphClient` async client; all 17 v1 endpoints; typed return types; `KnowledgeGraphError`
+- `sdk/knowledge_graph/__init__.py` — public exports
+
+### Docs + tooling
+- `docs/api-guide.md` — authentication, rate limiting, quickstart (SDK + cURL), full endpoint reference table
+- `docs/openapi.json` — OpenAPI 3.1.0 spec (21 paths); auto-exported via `scripts/export_openapi.py`
+- `scripts/export_openapi.py` — one-shot export script
+- `examples/ingest_and_query.py` — end-to-end demo: ingest 2 records → list entities → graph query → trust explanation → conflict queue
+
+### Tests
+- `tests/unit/test_auth.py` — 11 tests (disabled/enabled modes, 401 variants, whitespace handling)
+- `tests/unit/test_rate_limit.py` — 12 tests (allow/deny, key isolation, window expiry, reset)
+- `tests/integration/test_phase8_api.py` — 11 tests via lightweight ASGI app (HTTP-level auth + rate limit)
 
 ### Exit criteria met
-- [x] Knowledge Explorer loads in browser (Vite dev server: `cd ui && npm run dev`)
-- [x] Graph canvas renders connected entities (React Flow, custom EntityNode per type/state)
-- [x] Entity inspector shows trust score, evidence, provenance, conflict history for selected node
-- [x] Trust filter slider filters visible graph edges by min_confidence
-- [x] DISPUTED entities surfaced in Conflict tab with badge count; Accept/Reject wired to Phase 6 API
-- [x] Linear/Stripe-quality aesthetic (dark canvas, zinc palette, indigo accents, monospace metrics)
-- [x] `npm run build` succeeds, no TypeScript errors
-- [x] 208/208 Python tests passing, 90.15% coverage (unchanged)
-- [x] Backend CORS configured for localhost:5173 + 4173
+- [x] `GET /v1/openapi.json` returns OpenAPI 3.1.0 spec (21 paths, version 0.6.0)
+- [x] SDK `KnowledgeGraphClient` covers all v1 endpoints; Pydantic models are fully typed
+- [x] Invalid API key returns 401; missing key returns 401 (when `API_KEYS` is set)
+- [x] Auth disabled when `API_KEYS` env var is unset (dev mode)
+- [x] Bucket-full request returns 429 with `Retry-After` header
+- [x] Developer guide in `docs/api-guide.md`
+- [x] Sample integration in `examples/ingest_and_query.py`
+- [x] `scripts/export_openapi.py` exports spec successfully
+- [x] **242/242 Python tests passing, 90.38% coverage** (34 new, no regression)
 
 ## Known limitations
-- Graph layout is a static circle; no physics/force layout (Phase 9 enhancement)
-- No graph re-layout on minConfidence slider change (re-fetch required; user must re-select entity)
-- `npm run dev` requires backend running at localhost:8000 for graph data
+- Rate limiter is in-process only — multiple gunicorn workers share nothing (Redis-backed for Phase 9)
+- SDK is not published to PyPI (pip install -e sdk/ for local use)
+- `mypy --strict` on SDK requires httpx and pydantic stubs installed in SDK environment
 
 ## Boundary
-- Do NOT begin Phase 8 (Public Platform) until the user approves.
+- Do NOT begin Phase 9 (Production Hardening) until the user approves.
 
 ## Next phase
-Phase 8 — Public Platform. See `33-next-actions.md`.
+Phase 9 — Production Hardening. See `33-next-actions.md`.
